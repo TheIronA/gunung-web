@@ -1,4 +1,10 @@
+"use client";
+
+import { useState } from "react";
+
 export default function Problem() {
+  const [activeBar, setActiveBar] = useState<string | null>(null);
+
   return (
     <section id="problem" className="py-20 lg:py-32 bg-bg">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
@@ -60,14 +66,16 @@ export default function Problem() {
               const maxCount = 52;
               const maxHeightPx = 320; // h-80 = 320px
               const heightPx = Math.round((item.count / maxCount) * maxHeightPx);
+              const isActive = activeBar === item.year;
 
               return (
                 <div key={item.year} className="flex-1 flex flex-col items-center group relative min-w-0">
                   <div
-                    className={`w-full ${item.projected ? 'bg-accent-light border-dashed' : 'bg-accent'} border border-primary rounded-t shadow-brutal-sm transition-all hover:opacity-80 relative flex items-center justify-center`}
+                    className={`w-full ${item.projected ? 'bg-accent-light border-dashed' : 'bg-accent'} border border-primary rounded-t shadow-brutal-sm transition-all hover:opacity-80 relative flex items-center justify-center cursor-pointer active:scale-95`}
                     style={{ height: `${heightPx}px` }}
+                    onClick={() => setActiveBar(isActive ? null : item.year)}
                   >
-                    <span className="absolute -top-7 left-1/2 -translate-x-1/2 font-mono text-xs font-bold text-accent-dark opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white px-2 py-1 rounded shadow-sm">
+                    <span className={`absolute -top-7 left-1/2 -translate-x-1/2 font-mono text-xs font-bold text-accent-dark ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity whitespace-nowrap bg-white px-2 py-1 rounded shadow-sm`}>
                       {item.count}
                     </span>
                   </div>
@@ -79,7 +87,9 @@ export default function Problem() {
 
           <div className="mt-8 space-y-2">
             <p className="text-sm text-gray-500 font-mono text-center">Number of indoor climbing facilities</p>
-            <p className="text-xs text-gray-400 text-center">Estimated based on industry growth trends. Hover over bars for counts.</p>
+            <p className="text-xs text-gray-400 text-center">
+              Estimated based on industry growth trends. <span className="hidden sm:inline">Hover over</span><span className="sm:hidden">Tap on</span> bars for counts.
+            </p>
           </div>
         </div>
       </div>
