@@ -21,11 +21,8 @@ export default function Navigation() {
           <a href="#about" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium">
             About
           </a>
-          <a href="#problem" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium">
-            The Problem
-          </a>
           <a href="#opportunity" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium">
-            Opportunity
+            Why Gunung
           </a>
           <a
             href="#contact"
