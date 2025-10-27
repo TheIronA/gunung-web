@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function Hero() {
   return (
     <section className="relative min-h-[85vh] flex items-center justify-center hero-pattern rubber-texture overflow-hidden">
@@ -16,6 +18,19 @@ export default function Hero() {
           <span className="font-mono text-xs tracking-wider bg-primary text-white px-4 py-2 border border-primary rounded">
             MALAYSIA'S FIRST CLIMBING BRAND
           </span>
+        </div>
+
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <div className="relative w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48">
+            <Image
+              src="/gunung-logo.png"
+              alt="Gunung Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
         </div>
 
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-heading mb-6 leading-tight tracking-tight">

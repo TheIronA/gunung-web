@@ -26,10 +26,10 @@ export default function About() {
 
           <div className="bg-bg border border-border rounded p-8 lg:p-12 shadow-brutal-lg hover-lift">
             <div className="mb-8">
-              <div className="w-20 h-20 bg-accent border border-primary rounded flex items-center justify-center mb-6 shadow-brutal-sm">
-                <span className="text-white text-3xl font-bold">SA</span>
+              <div className="w-20 h-20 bg-gray-800 border border-primary rounded flex items-center justify-center mb-6 shadow-brutal-sm">
+                <span className="text-white text-3xl font-bold">AA</span>
               </div>
-              <h3 className="text-2xl font-bold font-heading mb-2">Founded by Syed Alwi Al-haddad</h3>
+              <h3 className="text-2xl font-bold font-heading mb-2">Founded by Alwi Al-haddad</h3>
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="font-mono text-xs bg-accent/10 text-accent px-3 py-1 border border-accent/20 rounded">
                   Biomedical Engineer

@@ -36,38 +36,51 @@ export default function Problem() {
 
         {/* Growth Chart */}
         <div className="bg-white border border-primary rounded p-8 lg:p-12 shadow-brutal-lg">
-          <div className="flex justify-between items-start mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
               <h3 className="text-2xl font-bold font-heading mb-2">Climbing Gym Growth in Malaysia</h3>
-              <p className="text-gray-500 font-mono text-sm">2019–2025 (Projected)</p>
+              <p className="text-gray-500 font-mono text-sm">2019–2025 (Est.)</p>
             </div>
             <div className="text-right">
-              <div className="text-4xl font-bold text-accent-dark font-heading">+250%</div>
+              <div className="text-4xl font-bold text-accent-dark font-heading">+247%</div>
               <p className="text-sm text-gray-500">Growth Rate</p>
             </div>
           </div>
 
-          <div className="relative h-64 flex items-end gap-4">
+          <div className="relative h-80 flex items-end justify-between gap-2 sm:gap-3 px-4">
             {[
-              { year: '2019', height: '25%' },
-              { year: '2020', height: '35%' },
-              { year: '2021', height: '45%' },
-              { year: '2022', height: '65%' },
-              { year: '2023', height: '80%' },
-              { year: '2024', height: '90%' },
-              { year: '2025', height: '100%', projected: true },
-            ].map((item) => (
-              <div key={item.year} className="flex-1 flex flex-col items-center">
-                <div
-                  className={`w-full ${item.projected ? 'bg-accent-light border-dashed' : 'bg-accent'} border border-primary rounded-t shadow-brutal-sm`}
-                  style={{ height: item.height }}
-                ></div>
-                <span className="mt-3 font-mono text-xs text-gray-500">{item.year}</span>
-              </div>
-            ))}
+              { year: '2019', count: 15 },
+              { year: '2020', count: 18 },
+              { year: '2021', count: 22 },
+              { year: '2022', count: 28 },
+              { year: '2023', count: 36 },
+              { year: '2024', count: 45 },
+              { year: '2025', count: 52, projected: true },
+            ].map((item) => {
+              const maxCount = 52;
+              const maxHeightPx = 320; // h-80 = 320px
+              const heightPx = Math.round((item.count / maxCount) * maxHeightPx);
+
+              return (
+                <div key={item.year} className="flex-1 flex flex-col items-center group relative min-w-0">
+                  <div
+                    className={`w-full ${item.projected ? 'bg-accent-light border-dashed' : 'bg-accent'} border border-primary rounded-t shadow-brutal-sm transition-all hover:opacity-80 relative flex items-center justify-center`}
+                    style={{ height: `${heightPx}px` }}
+                  >
+                    <span className="absolute -top-7 left-1/2 -translate-x-1/2 font-mono text-xs font-bold text-accent-dark opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white px-2 py-1 rounded shadow-sm">
+                      {item.count}
+                    </span>
+                  </div>
+                  <span className="mt-3 font-mono text-xs text-gray-500">{item.year}</span>
+                </div>
+              );
+            })}
           </div>
 
-          <p className="mt-8 text-sm text-gray-500 font-mono text-center">Number of indoor climbing facilities</p>
+          <div className="mt-8 space-y-2">
+            <p className="text-sm text-gray-500 font-mono text-center">Number of indoor climbing facilities</p>
+            <p className="text-xs text-gray-400 text-center">Estimated based on industry growth trends. Hover over bars for counts.</p>
+          </div>
         </div>
       </div>
     </section>
