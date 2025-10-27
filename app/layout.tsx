@@ -3,7 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Gunung — Born from our soil, built for ascent",
-  description: "Malaysia's first homegrown climbing brand — connecting world-class gear with local climbers.",
+  description: "Bridging Malaysian climbers with world-class gear through partnerships, community, and shared passion.",
+  icons: {
+    icon: "/gunung-logo.png",
+    apple: "/gunung-logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -25,8 +25,7 @@ export default function Contact() {
               Let's build something together
             </h2>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              Interested in partnering, stocking our products, or just want to chat about climbing in Malaysia? Reach out
-              and let's connect.
+              Interested in collaborating, connecting with Malaysia's climbing community, or just want to chat about the scene? Reach out and let's connect.
             </p>
 
             <div className="space-y-6">

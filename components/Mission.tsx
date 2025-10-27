@@ -5,11 +5,10 @@ export default function Mission() {
         <div className="max-w-4xl mx-auto">
           <span className="font-mono text-xs tracking-wider text-accent font-medium mb-6 block">OUR MISSION</span>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold font-heading mb-8 leading-tight">
-            We're building the foundation for Malaysia's climbing future — one grip at a time.
+            Growing Malaysia's climbing community — one partnership at a time.
           </h2>
           <p className="text-lg md:text-xl text-gray-600 mb-12 leading-relaxed">
-            Whether you're a retailer, manufacturer, fellow climber, or potential investor, we'd love to hear from you.
-            Let's grow Malaysia's climbing scene together.
+            Whether you're a brand, retailer, gym owner, fellow climber, or someone who believes in what we're building — we'd love to connect. Together, we can make Malaysian climbing something truly special.
           </p>
           <a
             href="#contact"

@@ -16,7 +16,7 @@ export default function Hero() {
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 text-center animate-fade-in-up">
         <div className="inline-block mb-6">
           <span className="font-mono text-xs tracking-wider bg-primary text-white px-4 py-2 border border-primary rounded">
-            MALAYSIA'S FIRST CLIMBING BRAND
+            MALAYSIA'S CLIMBING COMMUNITY
           </span>
         </div>
 
@@ -42,7 +42,7 @@ export default function Hero() {
         </p>
 
         <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-12">
-          Malaysia's first homegrown climbing brand — connecting world-class gear with local climbers.
+          Bridging Malaysian climbers with world-class gear through partnerships, community, and shared passion.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

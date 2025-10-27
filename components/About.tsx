@@ -12,14 +12,10 @@ export default function About() {
             </h2>
             <div className="space-y-4 text-lg text-gray-600 leading-relaxed">
               <p>
-                Gunung is building the foundation for Malaysia's climbing future. We're starting by improving access to
-                world-class climbing shoes through strategic partnerships with established international brands, making
-                quality gear available to Malaysian climbers at accessible prices.
+                Gunung is building a community platform that connects Malaysian climbers with world-class gear. Through strategic partnerships with established international brands, we're improving access to quality climbing equipment at prices that work for our community.
               </p>
               <p>
-                Our long-term vision is to develop our own line of climbing equipment that leverages Malaysia's rich
-                natural rubber heritage and skilled manufacturing base. We're not just importing gear — we're creating a
-                homegrown brand that represents Malaysian craftsmanship on the global climbing stage.
+                We believe Malaysia's climbing scene deserves the same access to great gear as anywhere else in the world. By working with trusted brands and building relationships with retailers, we're creating a network that serves climbers from KL to Penang, from indoor gyms to outdoor crags. Our roots in Malaysia's industrial heritage — from rubber production to precision manufacturing — inspire us to think big about what's possible for our community.
               </p>
             </div>
           </div>
@@ -29,7 +25,7 @@ export default function About() {
               <div className="w-20 h-20 bg-gray-800 border border-primary rounded flex items-center justify-center mb-6 shadow-brutal-sm">
                 <span className="text-white text-3xl font-bold">AA</span>
               </div>
-              <h3 className="text-2xl font-bold font-heading mb-2">Founded by Alwi Al-haddad</h3>
+              <h3 className="text-2xl font-bold font-heading mb-2">Founded by Syed Alwi Al-haddad</h3>
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="font-mono text-xs bg-accent/10 text-accent px-3 py-1 border border-accent/20 rounded">
                   Biomedical Engineer
@@ -43,8 +39,7 @@ export default function About() {
               </div>
             </div>
             <p className="text-gray-600 leading-relaxed">
-              Combining engineering precision, technical expertise, and a passion for climbing, Syed Alwi is bridging the
-              gap between Malaysia's industrial capabilities and the global climbing community.
+              Combining technical expertise with a deep passion for climbing, Alwi is connecting Malaysia's growing climbing community with international partners and resources. Gunung is about collaboration, not competition — building bridges between local climbers and the global gear brands they trust.
             </p>
           </div>
         </div>
