@@ -19,7 +19,7 @@ export default function About() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols gap-8">
           {/* Founder 1 */}
           <div className="bg-bg border border-border rounded p-8 shadow-brutal-lg hover-lift">
             <div className="mb-6">
@@ -42,31 +42,6 @@ export default function About() {
             </div>
             <p className="text-gray-600 leading-relaxed">
               Combining technical expertise with a deep passion for climbing, Alwi is connecting Malaysia's growing climbing community with international partners and resources.
-            </p>
-          </div>
-
-          {/* Placeholder Founder 2 */}
-          <div className="bg-bg border border-border border-dashed rounded p-8 shadow-brutal-lg hover-lift opacity-60">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-gray-300 border border-primary rounded flex items-center justify-center mb-4 shadow-brutal-sm">
-                <span className="text-gray-600 text-3xl font-bold">?</span>
-              </div>
-              <h3 className="text-xl font-bold font-heading mb-2">Fulan bin Fulan</h3>
-              <p className="text-sm text-gray-500 mb-3 font-mono">Co-founder</p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="font-mono text-xs bg-gray-100 text-gray-500 px-3 py-1 border border-gray-300 rounded">
-                  skill
-                </span>
-                <span className="font-mono text-xs bg-gray-100 text-gray-500 px-3 py-1 border border-gray-300 rounded">
-                  skill
-                </span>
-                <span className="font-mono text-xs bg-gray-100 text-gray-500 px-3 py-1 border border-gray-300 rounded">
-                  Climber
-                </span>
-              </div>
-            </div>
-            <p className="text-gray-500 leading-relaxed italic">
-              Placeholder text.
             </p>
           </div>
         </div>

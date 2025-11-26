@@ -17,7 +17,17 @@ export default function Footer() {
             <span className="text-xl font-bold font-heading tracking-tight text-white">GUNUNG</span>
           </div>
 
-          <p className="text-gray-400 text-sm font-mono">© 2025 Gunung. Born from our soil, built for ascent.</p>
+          <div className="flex flex-col items-center md:items-end gap-1">
+            <p className="text-gray-400 text-sm font-mono text-center md:text-right">© 2025 Gunung. Born from our soil, built for ascent.</p>
+            <a 
+              href="https://alwialhaddad.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-gray-600 text-xs font-mono hover:text-white transition-colors"
+            >
+              Created by Alwi Al-Haddad
+            </a>
+          </div>
         </div>
       </div>
     </footer>

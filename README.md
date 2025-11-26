@@ -12,18 +12,21 @@ A modern, neo-brutalist landing page for Gunung, Malaysia's first homegrown clim
 ## Design Features
 
 ### Neo-Brutalist Aesthetic
+
 - 3px solid borders throughout
 - Hard offset shadows (no soft blurs)
 - Minimal border radius (4px)
 - Bold, geometric design with high contrast
 
 ### Color Scheme
+
 - **Primary**: Deep slate navy (#0F172A)
 - **Accent**: Green tones (#10B981, #34D399, #059669)
 - **Background**: Light slate (#F8FAFC, #F1F5F9)
 - **Borders**: Light gray (#E2E8F0)
 
 ### Typography
+
 - **Headings**: Space Grotesk (bold, geometric)
 - **Body**: Inter (clean, readable)
 - **Code/Labels**: JetBrains Mono
@@ -38,16 +41,19 @@ A modern, neo-brutalist landing page for Gunung, Malaysia's first homegrown clim
 ### Installation
 
 1. Navigate to the project directory:
+
 ```bash
 cd "c:\Users\mralw\Desktop\random projects\Gunung"
 ```
 
 2. Install dependencies (if not already installed):
+
 ```bash
 npm install
 ```
 
 3. Run the development server:
+
 ```bash
 npm run dev
 ```
@@ -90,11 +96,12 @@ Gunung/
 3. **Problem** - Market challenges with climbing gym growth chart
 4. **Opportunity** - Malaysia's natural advantages (rubber, manufacturing, community)
 5. **Mission** - Vision statement with CTA
-6. **Contact** - Contact form with email: contact@gunung.my
+6. **Contact** - Contact form with email: syedalwialhaddad@gmail.com
 
 ## Customization
 
 ### Colors
+
 Edit [tailwind.config.ts](tailwind.config.ts) to change the color scheme:
 
 ```typescript
@@ -108,12 +115,13 @@ colors: {
 ```
 
 ### Content
+
 - Edit component files in the `components/` directory
 - Update metadata in [app/layout.tsx](app/layout.tsx)
 
 ## Contact
 
-Email: contact@gunung.my
+Email: syedalwialhaddad@gmail.com
 
 ---
 
