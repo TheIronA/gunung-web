@@ -11,6 +11,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No items provided' }, { status: 400 });
     }
 
+    if (!stripe) {
+      console.error('Stripe is not configured (STRIPE_SECRET_KEY missing)');
+      return NextResponse.json(
+        { error: 'Payment system is currently unavailable' },
+        { status: 503 }
+      );
+    }
+
     // Map the requested items to our product data to ensure price integrity
     const lineItems = items.map((item: { id: string; quantity: number }) => {
       const product = products.find((p) => p.id === item.id);
