@@ -1,19 +1,57 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 export default function Contact() {
   const [showMessage, setShowMessage] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setShowMessage(true);
-    (e.target as HTMLFormElement).reset();
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      email: "",
+      organization: "",
+      message: "",
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required("Required"),
+      email: Yup.string().email("Invalid email address").required("Required"),
+      organization: Yup.string(),
+      message: Yup.string()
+        .min(25, "Must be at least 25 characters")
+        .required("Required"),
+    }),
+    onSubmit: async (values, { resetForm }) => {
+      setIsLoading(true);
+      try {
+        // Send to our API route
+        const response = await fetch("/api/contact", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
+        });
 
-    setTimeout(() => {
-      setShowMessage(false);
-    }, 5000);
-  };
+        if (response.ok) {
+          setShowMessage(true);
+          resetForm();
+          setTimeout(() => {
+            setShowMessage(false);
+          }, 5000);
+        } else {
+          alert("Something went wrong. Please try again.");
+        }
+      } catch (error) {
+        console.error("Submission error:", error);
+        alert("Something went wrong. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+  });
 
   return (
     <section id="contact" className="py-20 lg:py-32 bg-white">
@@ -70,7 +108,7 @@ export default function Contact() {
 
           {/* Contact Form */}
           <div className="bg-bg border border-border rounded p-8 lg:p-10 shadow-brutal-lg">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={formik.handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-primary mb-2 font-heading">
                   Name
@@ -78,10 +116,16 @@ export default function Contact() {
                 <input
                   type="text"
                   id="name"
-                  name="name"
-                  required
-                  className="w-full px-4 py-3 border border-border rounded focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all duration-200 bg-white"
+                  {...formik.getFieldProps("name")}
+                  className={`w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 transition-all duration-200 bg-white ${
+                    formik.touched.name && formik.errors.name
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                      : "border-border focus:border-accent focus:ring-accent/50"
+                  }`}
                 />
+                {formik.touched.name && formik.errors.name ? (
+                  <div className="text-red-500 text-sm mt-1">{formik.errors.name}</div>
+                ) : null}
               </div>
 
               <div>
@@ -91,10 +135,16 @@ export default function Contact() {
                 <input
                   type="email"
                   id="email"
-                  name="email"
-                  required
-                  className="w-full px-4 py-3 border border-border rounded focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all duration-200 bg-white"
+                  {...formik.getFieldProps("email")}
+                  className={`w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 transition-all duration-200 bg-white ${
+                    formik.touched.email && formik.errors.email
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                      : "border-border focus:border-accent focus:ring-accent/50"
+                  }`}
                 />
+                {formik.touched.email && formik.errors.email ? (
+                  <div className="text-red-500 text-sm mt-1">{formik.errors.email}</div>
+                ) : null}
               </div>
 
               <div>
@@ -104,7 +154,7 @@ export default function Contact() {
                 <input
                   type="text"
                   id="organization"
-                  name="organization"
+                  {...formik.getFieldProps("organization")}
                   className="w-full px-4 py-3 border border-border rounded focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all duration-200 bg-white"
                 />
               </div>
@@ -115,18 +165,25 @@ export default function Contact() {
                 </label>
                 <textarea
                   id="message"
-                  name="message"
                   rows={5}
-                  required
-                  className="w-full px-4 py-3 border border-border rounded focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all duration-200 resize-none bg-white"
+                  {...formik.getFieldProps("message")}
+                  className={`w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 transition-all duration-200 resize-none bg-white ${
+                    formik.touched.message && formik.errors.message
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                      : "border-border focus:border-accent focus:ring-accent/50"
+                  }`}
                 ></textarea>
+                {formik.touched.message && formik.errors.message ? (
+                  <div className="text-red-500 text-sm mt-1">{formik.errors.message}</div>
+                ) : null}
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-accent text-white px-6 py-3 border border-accent rounded shadow-brutal hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 font-bold font-heading text-lg btn-hover"
+                disabled={isLoading}
+                className="w-full bg-accent text-white px-6 py-3 border border-accent rounded shadow-brutal hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 font-bold font-heading text-lg btn-hover disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                SEND MESSAGE
+                {isLoading ? "SENDING..." : "SEND MESSAGE"}
               </button>
             </form>
 
