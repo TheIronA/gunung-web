@@ -33,8 +33,11 @@ export default function Store() {
         
         import StoreProductList from "@/components/StoreProductList";
         
-        <div className="py-20">
-          <h1 className="text-4xl font-bold font-heading text-center mb-12">Our Collection</h1>
+        <div className="py-20 flex-grow">
+          <h1 className="text-4xl md:text-5xl font-bold font-heading text-center mb-4 text-primary">Our Collection</h1>
+          <p className="text-center text-gray-600 max-w-2xl mx-auto px-6 mb-12">
+            Gear designed for the Malaysian ascent. Built to last, born from our soil.
+          </p>
           <StoreProductList />
         </div>
       */}
