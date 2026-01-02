@@ -38,7 +38,7 @@ export default function Hero() {
         </h1>
 
         <p className="text-2xl md:text-3xl lg:text-4xl font-medium text-gray-600 mb-4">
-          Born from our soil, built for ascent.
+          Ascend to the peak.
         </p>
 
         <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-12">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Gunung — Born from our soil, built for ascent",
+  title: "Gunung — Ascend to the peak",
   description: "Bridging Malaysian climbers with world-class gear through partnerships, community, and shared passion.",
   icons: {
     icon: "/gunung-logo.png",

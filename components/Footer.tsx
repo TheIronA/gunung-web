@@ -18,7 +18,7 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-col items-center md:items-end gap-1">
-            <p className="text-gray-400 text-sm font-mono text-center md:text-right">© 2025 Gunung. Born from our soil, built for ascent.</p>
+            <p className="text-gray-400 text-sm font-mono text-center md:text-right">© 2025 Gunung. Ascend to the peak.</p>
             <a 
               href="https://alwialhaddad.com" 
               target="_blank" 

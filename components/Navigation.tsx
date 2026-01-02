@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Navigation() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-4 flex justify-between items-center">
@@ -18,20 +21,91 @@ export default function Navigation() {
           </div>
           <span className="text-xl font-bold font-heading tracking-tight">GUNUNG</span>
         </Link>
+
+        {/* Desktop Navigation */}
         <div className="hidden md:flex gap-8 items-center">
-          <Link href="/#about" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium">
+          <Link href="/#about" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             About
           </Link>
-          <Link href="/#opportunity" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium">
+          <Link href="/#opportunity" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
             Why Gunung
           </Link>
-          <Link href="/store" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium">
+          <Link href="/store" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
             Store
           </Link>
           <Link
             href="/#contact"
-            className="bg-accent text-white px-6 py-2 border border-accent rounded shadow-brutal-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-sm font-medium"
+            className="bg-accent text-white px-6 py-2 border border-accent rounded shadow-brutal-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-sm font-medium flex items-center gap-2"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Contact
+          </Link>
+        </div>
+
+        {/* Burger Menu Button */}
+        <button
+          className="md:hidden flex flex-col gap-1.5 w-6 h-6 justify-center"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span className={`block h-0.5 w-6 bg-gray-800 transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+          <span className={`block h-0.5 w-6 bg-gray-800 transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`}></span>
+          <span className={`block h-0.5 w-6 bg-gray-800 transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ${isMenuOpen ? 'max-h-screen' : 'max-h-0'}`}>
+        <div className="px-6 py-4 border-t border-border bg-white flex flex-col gap-4">
+          <Link
+            href="/#about"
+            className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            About
+          </Link>
+          <Link
+            href="/#opportunity"
+            className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+            Why Gunung
+          </Link>
+          <Link
+            href="/store"
+            className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            Store
+          </Link>
+          <Link
+            href="/#contact"
+            className="bg-accent text-white px-6 py-2 border border-accent rounded shadow-brutal-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-sm font-medium text-center flex items-center justify-center gap-2"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
             Contact
           </Link>
         </div>
