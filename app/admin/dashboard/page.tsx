@@ -4,6 +4,7 @@ import { getProducts, getStoreSettings } from '@/lib/products';
 import StockEditor from '@/components/admin/StockEditor';
 import StoreStatusToggle from '@/components/admin/StoreStatusToggle';
 import ProductVisibilityToggle from '@/components/admin/ProductVisibilityToggle';
+import ProductPriceEditor from '@/components/admin/ProductPriceEditor';
 
 export default async function AdminDashboard() {
     const isAuth = await verifyAuth();
@@ -74,6 +75,11 @@ export default async function AdminDashboard() {
                                     <ProductVisibilityToggle
                                         productId={product.id}
                                         initialIsActive={product.is_active}
+                                    />
+
+                                    <ProductPriceEditor
+                                        productId={product.id}
+                                        initialPrice={product.price}
                                     />
 
                                     <div className="border-t border-gray-200 pt-4">

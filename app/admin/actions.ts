@@ -123,3 +123,21 @@ export async function toggleStoreStatus(isOpen: boolean) {
     throw new Error('Failed to update store status');
   }
 }
+
+export async function updatePrice(productId: string, newPriceCents: number) {
+  const isAuth = await verifyAuth();
+  if (!isAuth) throw new Error('Unauthorized');
+
+  const supabase = createServerClient();
+  if (!supabase) throw new Error('Supabase not configured');
+
+  const { error } = await (supabase
+    .from('products' as any) as any)
+    .update({ price: newPriceCents } as any)
+    .eq('id', productId);
+
+  if (error) {
+    console.error('Error updating product price', error);
+    throw new Error('Failed to update product price');
+  }
+}
