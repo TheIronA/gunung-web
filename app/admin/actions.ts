@@ -141,3 +141,22 @@ export async function updatePrice(productId: string, newPriceCents: number) {
     throw new Error('Failed to update product price');
   }
 }
+
+export async function deleteStock(productId: string, size: string) {
+  const isAuth = await verifyAuth();
+  if (!isAuth) throw new Error('Unauthorized');
+
+  const supabase = createServerClient();
+  if (!supabase) throw new Error('Supabase not configured');
+
+  const { error } = await (supabase
+    .from('product_sizes' as any) as any)
+    .delete()
+    .eq('product_id', productId)
+    .eq('size', size);
+
+  if (error) {
+    console.error('Error deleting product size', error);
+    throw new Error('Failed to delete product size');
+  }
+}
