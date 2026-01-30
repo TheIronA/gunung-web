@@ -3,9 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useCart } from "@/lib/cart-context";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { totalItems } = useCart();
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border">
@@ -25,8 +27,10 @@ export default function Navigation() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex gap-8 items-center">
           <Link href="/#about" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 16v-4" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="12" cy="8" r="0.5" fill="currentColor"/>
             </svg>
             About
           </Link>
@@ -36,20 +40,30 @@ export default function Navigation() {
             </svg>
             Why Gunung
           </Link>
-          <Link href="/store" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-            Store
-          </Link>
-          <Link
-            href="/#contact"
-            className="bg-accent text-white px-6 py-2 border border-accent rounded shadow-brutal-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-sm font-medium flex items-center gap-2"
-          >
+          <Link href="/#contact" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Contact
+          </Link>
+          <Link href="/cart" className="relative text-gray-500 hover:text-primary transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-accent text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+                {totalItems}
+              </span>
+            )}
+          </Link>
+          <Link
+            href="/store"
+            className="bg-accent text-white px-6 py-2 border border-accent rounded shadow-brutal-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-sm font-medium flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            Store
           </Link>
         </div>
 
@@ -73,8 +87,10 @@ export default function Navigation() {
             className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2"
             onClick={() => setIsMenuOpen(false)}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 16v-4" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="12" cy="8" r="0.5" fill="currentColor"/>
             </svg>
             About
           </Link>
@@ -89,24 +105,34 @@ export default function Navigation() {
             Why Gunung
           </Link>
           <Link
-            href="/store"
-            className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-            Store
-          </Link>
-          <Link
             href="/#contact"
-            className="bg-accent text-white px-6 py-2 border border-accent rounded shadow-brutal-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-sm font-medium text-center flex items-center justify-center gap-2"
+            className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2"
             onClick={() => setIsMenuOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Contact
+          </Link>
+          <Link
+            href="/cart"
+            className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2 relative"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Cart {totalItems > 0 && `(${totalItems})`}
+          </Link>
+          <Link
+            href="/store"
+            className="bg-accent text-white px-6 py-2 border border-accent rounded shadow-brutal-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-sm font-medium text-center flex items-center justify-center gap-2"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            Store
           </Link>
         </div>
       </div>

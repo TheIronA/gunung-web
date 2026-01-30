@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.5.3",
+    "@supabase/supabase-js": "^2.90.1",
     "formik": "^2.4.9",
     "next": "16.0.10",
     "nodemailer": "^7.0.11",

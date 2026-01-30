@@ -1,10 +1,12 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import StoreProductList from "@/components/StoreProductList";
+import { getStoreSettings } from "@/lib/products";
 
-const isStoreActive = process.env.NEXT_PUBLIC_STORE_ACTIVE === 'true';
+export default async function Store() {
+  const settings = await getStoreSettings();
+  const isStoreActive = settings.isStoreOpen && process.env.NEXT_PUBLIC_STORE_ACTIVE !== 'false';
 
-export default function Store() {
   return (
     <main className="min-h-screen flex flex-col bg-bg">
       <Navigation />

@@ -47,10 +47,10 @@ export default function Hero() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <a
-            href="#contact"
+            href="/store"
             className="bg-accent text-white px-8 py-3 border border-accent rounded shadow-brutal hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 text-lg font-semibold btn-hover"
           >
-            Partner With Us
+            Browse Store
           </a>
           <a
             href="#about"

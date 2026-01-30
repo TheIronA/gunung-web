@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { Product } from "@/lib/products";
-import ProductCheckoutButton from "./ProductCheckoutButton";
+import AddToCartButton from "./AddToCartButton";
 
 export default function ProductDetails({ product }: { product: Product }) {
   const [selectedSize, setSelectedSize] = useState<string>("");
 
   // Check if size is required but not selected
   const isSizeRequired = product.sizes && product.sizes.length > 0;
-  const canCheckout = !isSizeRequired || selectedSize !== "";
+  const canAddToCart = !isSizeRequired || selectedSize !== "";
   const isComingSoon = !product.image.startsWith('http');
 
   return (
@@ -73,16 +73,14 @@ export default function ProductDetails({ product }: { product: Product }) {
 
       {!isComingSoon && (
         <div className="border-t border-border pt-8">
-          {!canCheckout && (
+          {!canAddToCart && (
             <p className="text-sm text-red-600 mb-4 font-medium">
               Please select a size to continue
             </p>
           )}
-          <ProductCheckoutButton
-            productId={product.id}
-            price={product.price}
-            currency={product.currency}
-            disabled={!canCheckout}
+          <AddToCartButton
+            product={product}
+            disabled={!canAddToCart}
             selectedSize={selectedSize}
           />
           <p className="text-xs text-gray-500 mt-4 font-mono">
