@@ -2,6 +2,16 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import StoreProductList from "@/components/StoreProductList";
 import { getStoreSettings } from "@/lib/products";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Store - Climbing Gear",
+  description: "Browse our collection of premium climbing shoes, chalk bags, and gear designed for Malaysian peaks.",
+  openGraph: {
+    title: "Gunung Store - Premium Climbing Gear",
+    description: "Browse our collection of premium climbing gear for Malaysian climbers.",
+  },
+};
 
 export default async function Store() {
   const settings = await getStoreSettings();

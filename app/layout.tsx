@@ -2,15 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { CartProvider } from "@/lib/cart-context";
+import { defaultMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Gunung — Ascend to the peak",
-  description: "Bridging Malaysian climbers with world-class gear through partnerships, community, and shared passion.",
-  icons: {
-    icon: "/gunung-logo.png",
-    apple: "/gunung-logo.png",
-  },
-};
+export const metadata: Metadata = defaultMetadata;
 
 export default function RootLayout({
   children,

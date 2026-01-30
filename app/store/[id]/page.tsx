@@ -1,16 +1,31 @@
-import { products } from "@/lib/products";
+import { products, getProduct } from "@/lib/products";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ProductDetails from "@/components/ProductDetails";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { generateProductMetadata, generateProductSchema, generateBreadcrumbSchema } from "@/lib/seo";
+import type { Metadata } from "next";
 
 // This is necessary for static site generation with dynamic routes
 export function generateStaticParams() {
   return products.map((product) => ({
     id: product.id,
   }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProduct(id);
+  
+  if (!product) {
+    return {
+      title: 'Product Not Found',
+    };
+  }
+  
+  return generateProductMetadata(product);
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,8 +36,24 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
+  const productSchema = generateProductSchema(product);
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Store', url: '/store' },
+    { name: product.name, url: `/store/${product.id}` },
+  ]);
+
   return (
-    <main className="min-h-screen flex flex-col bg-bg">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <main className="min-h-screen flex flex-col bg-bg">
       <Navigation />
 
       <div className="flex-grow py-12 lg:py-20">
@@ -62,5 +93,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
       <Footer />
     </main>
+    </>
   );
 }
