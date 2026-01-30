@@ -5,7 +5,7 @@ import { getStoreSettings } from "@/lib/products";
 
 export default async function Store() {
   const settings = await getStoreSettings();
-  const isStoreActive = settings.isStoreOpen && process.env.NEXT_PUBLIC_STORE_ACTIVE !== 'false';
+  const isStoreActive = settings.isStoreOpen;
 
   return (
     <main className="min-h-screen flex flex-col bg-bg">

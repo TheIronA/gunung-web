@@ -216,7 +216,8 @@ export async function checkStock(productId: string, size: string): Promise<numbe
 
 export async function getStoreSettings(): Promise<{ isStoreOpen: boolean }> {
   if (!isSupabaseConfigured || !supabase) {
-    return { isStoreOpen: process.env.NEXT_PUBLIC_STORE_ACTIVE === 'true' };
+    console.warn('Supabase not configured, defaulting store to open');
+    return { isStoreOpen: true };
   }
 
   try {
