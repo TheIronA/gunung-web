@@ -51,8 +51,8 @@ export async function updateStock(productId: string, size: string, newStock: num
   }
 
   // Check if the record exists first
-  const { data: existingSize } = await supabase
-    .from('product_sizes')
+  const { data: existingSize } = await (supabase
+    .from('product_sizes' as any) as any)
     .select('*')
     .eq('product_id', productId)
     .eq('size', size)
@@ -62,17 +62,17 @@ export async function updateStock(productId: string, size: string, newStock: num
 
   if (existingSize) {
     // Update existing
-    const { error: updateError } = await supabase
-      .from('product_sizes')
-      .update({ stock: newStock })
+    const { error: updateError } = await (supabase
+      .from('product_sizes' as any) as any)
+      .update({ stock: newStock } as any)
       .eq('product_id', productId)
       .eq('size', size);
     error = updateError;
   } else {
     // Insert new (in case we add a new size variation dynamically, 
     // though the current UI will likely just show existing ones)
-    const { error: insertError } = await supabase
-      .from('product_sizes')
+    const { error: insertError } = await (supabase
+      .from('product_sizes' as any) as any)
       .insert({
         product_id: productId,
         size: size,
@@ -94,9 +94,9 @@ export async function toggleProductStatus(productId: string, isActive: boolean) 
   const supabase = createServerClient();
   if (!supabase) throw new Error('Supabase not configured');
 
-  const { error } = await supabase
-    .from('products')
-    .update({ is_active: isActive })
+  const { error } = await (supabase
+    .from('products' as any) as any)
+    .update({ is_active: isActive } as any)
     .eq('id', productId);
 
   if (error) {
@@ -113,9 +113,9 @@ export async function toggleStoreStatus(isOpen: boolean) {
   if (!supabase) throw new Error('Supabase not configured');
 
   // We assume row with id=1 exists (created by migration)
-  const { error } = await supabase
-    .from('store_settings')
-    .update({ is_store_open: isOpen })
+  const { error } = await (supabase
+    .from('store_settings' as any) as any)
+    .update({ is_store_open: isOpen } as any)
     .eq('id', 1);
 
   if (error) {

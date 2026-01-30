@@ -125,7 +125,7 @@ export async function getProducts(): Promise<Product[]> {
       price: product.price,
       image: product.image,
       currency: product.currency,
-      is_active: product.is_active ?? true,
+      is_active: (product as any).is_active ?? true,
       sizes: (sizesData as ProductSizeRow[] | null)
         ?.filter((size) => size.product_id === product.id)
         .map((size) => ({ size: size.size, stock: size.stock })),
@@ -172,7 +172,7 @@ export async function getProduct(id: string): Promise<Product | null> {
       price: typedProduct.price,
       image: typedProduct.image,
       currency: typedProduct.currency,
-      is_active: typedProduct.is_active ?? true,
+      is_active: (typedProduct as any).is_active ?? true,
       sizes: (sizesData as ProductSizeRow[] | null)?.map((size) => ({
         size: size.size,
         stock: size.stock
@@ -220,8 +220,8 @@ export async function getStoreSettings(): Promise<{ isStoreOpen: boolean }> {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('store_settings')
+    const { data, error } = await (supabase
+      .from('store_settings' as any) as any)
       .select('is_store_open')
       .eq('id', 1)
       .single();
@@ -230,7 +230,7 @@ export async function getStoreSettings(): Promise<{ isStoreOpen: boolean }> {
       return { isStoreOpen: true }; // Default to open
     }
 
-    return { isStoreOpen: data.is_store_open };
+    return { isStoreOpen: (data as any).is_store_open };
   } catch (error) {
     console.error('Failed to fetch store settings:', error);
     return { isStoreOpen: true };
