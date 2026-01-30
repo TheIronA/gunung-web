@@ -20,7 +20,7 @@ export const defaultMetadata: Metadata = {
     'Southeast Asia climbing',
     'Gunung climbing',
   ],
-  authors: [{ name: 'Syed Alwi Al-haddad', email: 'syedalwialhaddad@gmail.com' }],
+  authors: [{ name: 'Syed Alwi Al-haddad' }],
   creator: 'Gunung',
   publisher: 'Gunung',
   robots: {
