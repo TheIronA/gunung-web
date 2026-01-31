@@ -5,7 +5,7 @@ const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://gunung.com';
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'Gunung — Malaysia\'s First Climbing Brand',
+    default: 'Gunung — Climbing gear & community for Malaysian climbers',
     template: '%s | Gunung',
   },
   description: 'Premium climbing gear for Malaysian peaks. Affordable, high-performance shoes and equipment designed for Southeast Asian climbers.',
@@ -51,7 +51,7 @@ export const defaultMetadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Gunung — Malaysia\'s First Climbing Brand',
+    title: 'Gunung — Climbing gear & community for Malaysian climbers',
     description: 'Premium climbing gear for Malaysian peaks.',
     images: [`${baseUrl}/gunung-logo.png`],
     creator: '@gunung',
