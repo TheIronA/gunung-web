@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase';
-import { sendOrderNotification } from '@/lib/notifications';
+import { sendOrderNotification, sendCustomerOrderConfirmation } from '@/lib/notifications';
 import Stripe from 'stripe';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -88,8 +88,8 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
   if (!supabase) {
     console.error('Supabase not configured, cannot process order');
-    // Still send notification via email
-    await sendOrderNotification({
+    // Still send notifications via email
+    const fallbackData = {
       sessionId: session.id,
       customerEmail: session.customer_details?.email || 'unknown',
       customerName: customerName || undefined,
@@ -97,7 +97,10 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       currency: session.currency || 'myr',
       items: [],
       shippingAddress: shippingAddress,
-    });
+    };
+
+    await sendOrderNotification(fallbackData);
+    await sendCustomerOrderConfirmation(fallbackData);
     return;
   }
 
@@ -176,8 +179,8 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       });
     }
 
-    // Send notification email
-    await sendOrderNotification({
+    // Send notification emails
+    const notificationData = {
       sessionId: session.id,
       orderId: order.id,
       customerEmail: session.customer_details?.email || 'unknown',
@@ -186,7 +189,13 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       currency: session.currency || 'myr',
       items: orderItems,
       shippingAddress: shippingAddress,
-    });
+    };
+
+    // Send to store owner
+    await sendOrderNotification(notificationData);
+
+    // Send confirmation to customer
+    await sendCustomerOrderConfirmation(notificationData);
 
     console.log('Order processed successfully:', order.id);
   } catch (error) {
