@@ -85,7 +85,7 @@ export default async function AdminDashboard() {
 
                                     <ProductSalePriceEditor
                                         productId={product.id}
-                                        initialSalePrice={product.sale_price}
+                                        initialSalePrice={product.sale_price ?? null}
                                         regularPrice={product.price}
                                     />
 

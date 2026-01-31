@@ -174,6 +174,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, name: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="John Doe"
+                      autoComplete="name"
                       required
                     />
                   </div>
@@ -188,6 +189,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, email: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="john@example.com"
+                      autoComplete="email"
                       required
                     />
                   </div>
@@ -202,6 +204,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="+60123456789"
+                      autoComplete="tel"
                       required
                     />
                   </div>
@@ -216,6 +219,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, line1: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="123 Jalan Example"
+                      autoComplete="address-line1"
                       required
                     />
                   </div>
@@ -230,6 +234,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, line2: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Apartment, suite, etc. (optional)"
+                      autoComplete="address-line2"
                     />
                   </div>
 
@@ -243,6 +248,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Kuala Lumpur"
+                      autoComplete="address-level2"
                       required
                     />
                   </div>
@@ -257,6 +263,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Selangor"
+                      autoComplete="address-level1"
                       required
                     />
                     {shippingError && (
@@ -274,6 +281,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setShippingAddress({ ...shippingAddress, postalCode: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="50000"
+                      autoComplete="postal-code"
                       required
                     />
                   </div>

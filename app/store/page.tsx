@@ -14,15 +14,31 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function Store() {
+export default async function Store({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string }>;
+}) {
   const settings = await getStoreSettings();
   const isStoreActive = settings.isStoreOpen;
+  const params = await searchParams;
+  const showSuccess = params.success === 'true';
 
   return (
     <main className="min-h-screen flex flex-col bg-bg" suppressHydrationWarning>
       <Navigation />
       {isStoreActive ? (
         <div className="py-20 flex-grow">
+          {showSuccess && (
+            <div className="max-w-2xl mx-auto px-6 mb-8">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                <h2 className="text-2xl font-bold text-green-800 mb-2">Order Successful!</h2>
+                <p className="text-green-700">
+                  Thank you for your purchase. You will receive a confirmation email shortly at the address you provided.
+                </p>
+              </div>
+            </div>
+          )}
           <h1 className="text-4xl md:text-5xl font-bold font-heading text-center mb-4 text-primary">Our Collection</h1>
           <p className="text-center text-gray-600 max-w-2xl mx-auto px-6 mb-8">
             Gear designed for the Malaysian ascent. Ascend to the peak.

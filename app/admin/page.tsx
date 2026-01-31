@@ -1,5 +1,6 @@
 import { verifyAuth, login } from './actions';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 export default async function AdminLoginPage({
     searchParams,
@@ -55,6 +56,11 @@ export default async function AdminLoginPage({
                         </button>
                     </div>
                 </form>
+                <div className="text-center mt-4">
+                    <Link href="/" className="text-indigo-600 hover:text-indigo-800">
+                        ← Back to main page
+                    </Link>
+                </div>
             </div>
         </div>
     );
