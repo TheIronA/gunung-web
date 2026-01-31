@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
+import LaunchSaleBanner from "@/components/LaunchSaleBanner";
 import WhatWeDo from "@/components/WhatWeDo";
 import About from "@/components/About";
 import Problem from "@/components/Problem";
@@ -26,6 +27,9 @@ export default function Home() {
       <main>
         <Navigation />
         <Hero />
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-8">
+          <LaunchSaleBanner />
+        </div>
         <WhatWeDo />
         <About />
         <Problem />
