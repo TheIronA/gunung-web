@@ -1,6 +1,7 @@
 import { getProducts } from "@/lib/products";
 import Link from "next/link";
 import Image from "next/image";
+import PriceDisplay from "./PriceDisplay";
 
 export default async function StoreProductList() {
   const products = await getProducts();
@@ -54,12 +55,14 @@ export default async function StoreProductList() {
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-lg font-mono font-bold">
-                    {(product.price / 100).toLocaleString("en-MY", {
-                      style: "currency",
-                      currency: product.currency.toUpperCase(),
-                    })}
-                  </span>
+                  <PriceDisplay
+                    price={product.price}
+                    salePrice={product.sale_price}
+                    saleEndDate={product.sale_end_date}
+                    currency={product.currency}
+                    size="medium"
+                    showSavings={true}
+                  />
 
                   {isSoldOut ? (
                     <button disabled className="bg-gray-300 text-gray-500 px-4 py-2 border border-gray-300 rounded cursor-not-allowed font-bold text-sm whitespace-nowrap">

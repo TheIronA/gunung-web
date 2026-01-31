@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useCart } from "@/lib/cart-context";
+import { getPriceDisplayData } from "@/lib/price-helpers";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -146,7 +147,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-bg">
+    <main className="min-h-screen flex flex-col bg-bg" suppressHydrationWarning>
       <Navigation />
       <div className="flex-grow py-12 lg:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
@@ -366,10 +367,17 @@ export default function CheckoutPage() {
                       {/* Price */}
                       <div className="text-right">
                         <p className="font-heading font-bold">
-                          {formatPrice(
-                            item.product.price * item.quantity,
-                            item.product.currency
-                          )}
+                          {(() => {
+                            const priceData = getPriceDisplayData(
+                              item.product.price,
+                              item.product.sale_price,
+                              item.product.sale_end_date
+                            );
+                            return formatPrice(
+                              priceData.currentPrice * item.quantity,
+                              item.product.currency
+                            );
+                          })()}
                         </p>
                       </div>
                     </div>

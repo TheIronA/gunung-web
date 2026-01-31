@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Product } from "@/lib/products";
 import AddToCartButton from "./AddToCartButton";
+import PriceDisplay from "./PriceDisplay";
 
 export default function ProductDetails({ product }: { product: Product }) {
   const [selectedSize, setSelectedSize] = useState<string>("");
@@ -22,11 +23,15 @@ export default function ProductDetails({ product }: { product: Product }) {
           Coming Soon
         </div>
       ) : (
-        <div className="text-2xl font-mono font-bold text-accent mb-6">
-          {(product.price / 100).toLocaleString("en-MY", {
-            style: "currency",
-            currency: product.currency.toUpperCase(),
-          })}
+        <div className="mb-6">
+          <PriceDisplay
+            price={product.price}
+            salePrice={product.sale_price}
+            saleEndDate={product.sale_end_date}
+            currency={product.currency}
+            size="large"
+            showSavings={true}
+          />
         </div>
       )}
 

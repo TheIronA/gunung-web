@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProducts } from '@/lib/products';
+import { getPriceDisplayData } from '@/lib/price-helpers';
 
 // Google Shopping / Merchant Center product feed (RSS/XML format)
 export async function GET() {
@@ -17,7 +18,18 @@ export async function GET() {
       .map((product) => {
         const totalStock = product.sizes?.reduce((sum, s) => sum + s.stock, 0) ?? 0;
         const inStock = totalStock > 0 || !product.sizes?.length;
-        const price = (product.price / 100).toFixed(2);
+
+        const priceData = getPriceDisplayData(
+          product.price,
+          product.sale_price,
+          product.sale_end_date
+        );
+
+        const regularPrice = (product.price / 100).toFixed(2);
+        const currentPrice = (priceData.currentPrice / 100).toFixed(2);
+        const salePriceTag = priceData.isOnSale
+          ? `<g:sale_price>${currentPrice} ${product.currency.toUpperCase()}</g:sale_price>`
+          : '';
 
         return `
     <item>
@@ -27,7 +39,8 @@ export async function GET() {
       <g:link>${baseUrl}/store/${product.id}</g:link>
       <g:image_link>${product.image.startsWith('http') ? product.image : `${baseUrl}${product.image}`}</g:image_link>
       <g:availability>${inStock ? 'in stock' : 'out of stock'}</g:availability>
-      <g:price>${price} ${product.currency.toUpperCase()}</g:price>
+      <g:price>${regularPrice} ${product.currency.toUpperCase()}</g:price>
+      ${salePriceTag}
       <g:condition>new</g:condition>
       <g:brand>Gunung</g:brand>
       <g:product_type>Sporting Goods &gt; Outdoor Recreation &gt; Climbing</g:product_type>

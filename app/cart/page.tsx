@@ -3,6 +3,7 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useCart } from "@/lib/cart-context";
+import { getPriceDisplayData } from "@/lib/price-helpers";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -99,7 +100,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <main className="min-h-screen flex flex-col bg-bg">
+      <main className="min-h-screen flex flex-col bg-bg" suppressHydrationWarning>
         <Navigation />
         <div className="flex-grow py-12 lg:py-20">
           <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
@@ -141,7 +142,7 @@ export default function CartPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-bg">
+    <main className="min-h-screen flex flex-col bg-bg" suppressHydrationWarning>
       <Navigation />
       <div className="flex-grow py-12 lg:py-20">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
@@ -276,16 +277,40 @@ export default function CartPage() {
 
                           {/* Price */}
                           <div className="text-right">
-                            <p className="text-sm text-gray-600">
-                              {formatPrice(item.product.price, item.product.currency)}{" "}
-                              each
-                            </p>
-                            <p className="font-heading font-bold text-lg">
-                              {formatPrice(
-                                item.product.price * item.quantity,
-                                item.product.currency
-                              )}
-                            </p>
+                            {(() => {
+                              const priceData = getPriceDisplayData(
+                                item.product.price,
+                                item.product.sale_price,
+                                item.product.sale_end_date
+                              );
+                              return (
+                                <>
+                                  <div className="text-sm text-gray-600 mb-1">
+                                    {priceData.isOnSale ? (
+                                      <>
+                                        <span className="line-through mr-1">
+                                          {formatPrice(priceData.originalPrice!, item.product.currency)}
+                                        </span>
+                                        <span className="text-accent font-bold">
+                                          {formatPrice(priceData.currentPrice, item.product.currency)}
+                                        </span>
+                                        {" each"}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {formatPrice(priceData.currentPrice, item.product.currency)} each
+                                      </>
+                                    )}
+                                  </div>
+                                  <p className="font-heading font-bold text-lg">
+                                    {formatPrice(
+                                      priceData.currentPrice * item.quantity,
+                                      item.product.currency
+                                    )}
+                                  </p>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

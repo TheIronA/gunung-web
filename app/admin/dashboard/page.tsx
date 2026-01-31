@@ -5,6 +5,7 @@ import StockEditor from '@/components/admin/StockEditor';
 import StoreStatusToggle from '@/components/admin/StoreStatusToggle';
 import ProductVisibilityToggle from '@/components/admin/ProductVisibilityToggle';
 import ProductPriceEditor from '@/components/admin/ProductPriceEditor';
+import ProductSalePriceEditor from '@/components/admin/ProductSalePriceEditor';
 
 export default async function AdminDashboard() {
     const isAuth = await verifyAuth();
@@ -16,7 +17,7 @@ export default async function AdminDashboard() {
     const { isStoreOpen } = await getStoreSettings();
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100" suppressHydrationWarning>
             <nav className="bg-white shadow">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
@@ -80,6 +81,12 @@ export default async function AdminDashboard() {
                                     <ProductPriceEditor
                                         productId={product.id}
                                         initialPrice={product.price}
+                                    />
+
+                                    <ProductSalePriceEditor
+                                        productId={product.id}
+                                        initialSalePrice={product.sale_price}
+                                        regularPrice={product.price}
                                     />
 
                                     <div className="border-t border-gray-200 pt-4">

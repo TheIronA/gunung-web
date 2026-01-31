@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import type { Product } from "./products";
+import { getPriceDisplayData } from "./price-helpers";
 
 export interface CartItem {
   product: Product;
@@ -115,10 +116,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
+  const subtotal = items.reduce((sum, item) => {
+    // Use the same price calculation logic as the display to ensure consistency
+    const priceData = getPriceDisplayData(
+      item.product.price,
+      item.product.sale_price,
+      item.product.sale_end_date
+    );
+    return sum + priceData.currentPrice * item.quantity;
+  }, 0);
 
   return (
     <CartContext.Provider

@@ -16,6 +16,8 @@ export interface Database {
           description: string
           details: string
           price: number
+          sale_price: number | null
+          sale_end_date: string | null
           image: string
           currency: string
           created_at: string
@@ -28,6 +30,8 @@ export interface Database {
           description: string
           details: string
           price: number
+          sale_price?: number | null
+          sale_end_date?: string | null
           image: string
           currency?: string
           created_at?: string
@@ -40,6 +44,8 @@ export interface Database {
           description?: string
           details?: string
           price?: number
+          sale_price?: number | null
+          sale_end_date?: string | null
           image?: string
           currency?: string
           updated_at?: string

@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import StoreProductList from "@/components/StoreProductList";
+import LaunchSaleBanner from "@/components/LaunchSaleBanner";
 import { getStoreSettings } from "@/lib/products";
 import type { Metadata } from "next";
 
@@ -18,14 +19,17 @@ export default async function Store() {
   const isStoreActive = settings.isStoreOpen;
 
   return (
-    <main className="min-h-screen flex flex-col bg-bg">
+    <main className="min-h-screen flex flex-col bg-bg" suppressHydrationWarning>
       <Navigation />
       {isStoreActive ? (
         <div className="py-20 flex-grow">
           <h1 className="text-4xl md:text-5xl font-bold font-heading text-center mb-4 text-primary">Our Collection</h1>
-          <p className="text-center text-gray-600 max-w-2xl mx-auto px-6 mb-12">
+          <p className="text-center text-gray-600 max-w-2xl mx-auto px-6 mb-8">
             Gear designed for the Malaysian ascent. Ascend to the peak.
           </p>
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+            <LaunchSaleBanner />
+          </div>
           <StoreProductList />
         </div>
       ) : (

@@ -160,3 +160,46 @@ export async function deleteStock(productId: string, size: string) {
     throw new Error('Failed to delete product size');
   }
 }
+
+export async function updateSalePrice(productId: string, newSalePriceCents: number | null) {
+  const isAuth = await verifyAuth();
+  if (!isAuth) throw new Error('Unauthorized');
+
+  const supabase = createServerClient();
+  if (!supabase) throw new Error('Supabase not configured');
+
+  // SERVER-SIDE VALIDATION: Critical for security!
+  if (newSalePriceCents !== null) {
+    // Validate sale price is non-negative
+    if (newSalePriceCents < 0) {
+      throw new Error('Sale price cannot be negative');
+    }
+
+    // Fetch the product to validate against regular price
+    const { data: product, error: fetchError } = await (supabase
+      .from('products' as any) as any)
+      .select('price')
+      .eq('id', productId)
+      .single();
+
+    if (fetchError || !product) {
+      console.error('Error fetching product for validation', fetchError);
+      throw new Error('Product not found');
+    }
+
+    // Validate sale price is less than regular price
+    if (newSalePriceCents >= product.price) {
+      throw new Error('Sale price must be less than regular price');
+    }
+  }
+
+  const { error } = await (supabase
+    .from('products' as any) as any)
+    .update({ sale_price: newSalePriceCents } as any)
+    .eq('id', productId);
+
+  if (error) {
+    console.error('Error updating sale price', error);
+    throw new Error('Failed to update sale price');
+  }
+}

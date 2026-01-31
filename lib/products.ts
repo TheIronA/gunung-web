@@ -12,6 +12,8 @@ export interface Product {
   description: string;
   details: string;
   price: number; // in cents
+  sale_price?: number | null; // in cents, null means no active sale
+  sale_end_date?: string | null;
   image: string;
   currency: string;
   is_active: boolean;
@@ -30,6 +32,7 @@ const fallbackProducts: Product[] = [
     description: 'High-performance climbing shoes with precision fit and superior grip.',
     details: 'The STRIKER QC in Green Malachite combines aggressive downturn with exceptional edging performance. Featuring a quick-closure system for easy on/off, sticky rubber outsole for maximum friction, and a snug fit that molds to your foot for precision on technical routes.',
     price: 46999,
+    sale_price: null,
     currency: 'myr',
     is_active: true,
     image: 'https://www.ocun.com/assets/products/1_700x700/zsxl3btjoh.04835-STRIKER-QC-Green-Malachite-1-1-.jpg',
@@ -51,6 +54,7 @@ const fallbackProducts: Product[] = [
     description: 'Versatile all-day climbing shoe perfect for gym and outdoor routes.',
     details: 'The JETT QC is designed for climbers who demand comfort without sacrificing performance. With a moderate downturn and breathable upper, these shoes excel on long climbing sessions. The quick-closure system ensures a secure fit, while the durable rubber rand provides protection and longevity.',
     price: 52999,
+    sale_price: null,
     currency: 'myr',
     is_active: true,
     image: 'https://www.ocun.com/assets/products/1_700x700/o4itpyk884.04041-Jett-QC-1.jpg',
@@ -71,6 +75,7 @@ const fallbackProducts: Product[] = [
     description: 'Premium cotton blend t-shirt designed for comfort on and off the crag.',
     details: 'The Gunung Ascent Tee is crafted from a breathable, heavyweight cotton blend that stands up to the abrasion of the rock while keeping you cool. Featuring a relaxed fit for unrestricted movement and our signature mountain motif on the back.',
     price: 3500,
+    sale_price: null,
     currency: 'myr',
     is_active: true,
     image: '/gunung-tee-placeholder.png',
@@ -81,6 +86,7 @@ const fallbackProducts: Product[] = [
     description: 'Hand-stitched chalk bag with fleece lining and secure closure.',
     details: 'Keep your hands dry and your focus sharp. Our chalk bag features a stiffened rim for easy access, a soft fleece lining to hold chalk effectively, and a tight closure system to prevent spills in your pack. Includes a brush loop and waist belt.',
     price: 8900,
+    sale_price: null,
     currency: 'myr',
     is_active: true,
     image: '/gunung-chalkbag-placeholder.png',
@@ -123,6 +129,8 @@ export async function getProducts(): Promise<Product[]> {
       description: product.description,
       details: product.details,
       price: product.price,
+      sale_price: product.sale_price,
+      sale_end_date: product.sale_end_date,
       image: product.image,
       currency: product.currency,
       is_active: (product as any).is_active ?? true,
@@ -170,6 +178,8 @@ export async function getProduct(id: string): Promise<Product | null> {
       description: typedProduct.description,
       details: typedProduct.details,
       price: typedProduct.price,
+      sale_price: typedProduct.sale_price,
+      sale_end_date: typedProduct.sale_end_date,
       image: typedProduct.image,
       currency: typedProduct.currency,
       is_active: (typedProduct as any).is_active ?? true,

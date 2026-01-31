@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { products, checkStock } from '@/lib/products';
 import { getShippingRate } from '@/lib/shipping';
+import { getPriceDisplayData } from '@/lib/price-helpers';
 
 interface CheckoutItem {
   id: string;
@@ -75,6 +76,17 @@ export async function POST(request: Request) {
           ? `${product.name} - ${item.size}`
           : product.name;
 
+        // Use validated price (handles sale prices and expiration)
+        const priceData = getPriceDisplayData(
+          product.price,
+          product.sale_price,
+          product.sale_end_date
+        );
+
+        // Stripe requires unit_amount to be an integer in cents
+        // Ensure we're passing a whole number to prevent Stripe API errors
+        const unitAmount = Math.round(priceData.currentPrice);
+
         return {
           price_data: {
             currency: product.currency,
@@ -87,7 +99,7 @@ export async function POST(request: Request) {
               },
               // images: [product.image], // Uncomment when you have real images hosted
             },
-            unit_amount: product.price,
+            unit_amount: unitAmount,
           },
           quantity: item.quantity,
         };
