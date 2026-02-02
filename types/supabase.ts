@@ -23,6 +23,18 @@ export interface Database {
           created_at: string
           updated_at: string
           is_active: boolean
+          foot_type_narrow: boolean
+          foot_type_regular: boolean
+          foot_type_wide: boolean
+          toe_type_egyptian: boolean
+          toe_type_roman: boolean
+          toe_type_greek: boolean
+          terrain_rocks: boolean
+          terrain_boulder: boolean
+          terrain_multipitch: boolean
+          terrain_indoor: boolean
+          last_type: string | null
+          rubber_type: string | null
         }
         Insert: {
           id?: string
@@ -37,6 +49,18 @@ export interface Database {
           created_at?: string
           updated_at?: string
           is_active?: boolean
+          foot_type_narrow?: boolean
+          foot_type_regular?: boolean
+          foot_type_wide?: boolean
+          toe_type_egyptian?: boolean
+          toe_type_roman?: boolean
+          toe_type_greek?: boolean
+          terrain_rocks?: boolean
+          terrain_boulder?: boolean
+          terrain_multipitch?: boolean
+          terrain_indoor?: boolean
+          last_type?: string | null
+          rubber_type?: string | null
         }
         Update: {
           id?: string
@@ -50,6 +74,18 @@ export interface Database {
           currency?: string
           updated_at?: string
           is_active?: boolean
+          foot_type_narrow?: boolean
+          foot_type_regular?: boolean
+          foot_type_wide?: boolean
+          toe_type_egyptian?: boolean
+          toe_type_roman?: boolean
+          toe_type_greek?: boolean
+          terrain_rocks?: boolean
+          terrain_boulder?: boolean
+          terrain_multipitch?: boolean
+          terrain_indoor?: boolean
+          last_type?: string | null
+          rubber_type?: string | null
         }
       }
       product_sizes: {

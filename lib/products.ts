@@ -18,6 +18,19 @@ export interface Product {
   currency: string;
   is_active: boolean;
   sizes?: ProductSize[];
+  // Climbing shoe metadata
+  foot_type_narrow?: boolean;
+  foot_type_regular?: boolean;
+  foot_type_wide?: boolean;
+  toe_type_egyptian?: boolean;
+  toe_type_roman?: boolean;
+  toe_type_greek?: boolean;
+  terrain_rocks?: boolean;
+  terrain_boulder?: boolean;
+  terrain_multipitch?: boolean;
+  terrain_indoor?: boolean;
+  last_type?: string | null;
+  rubber_type?: string | null;
 }
 
 // Database row types
@@ -29,13 +42,26 @@ const fallbackProducts: Product[] = [
   {
     id: 'striker-qc-green-malachite',
     name: 'STRIKER QC (Green Malachite)',
-    description: 'High-performance climbing shoes with precision fit and superior grip.',
-    details: 'The STRIKER QC in Green Malachite combines aggressive downturn with exceptional edging performance. Featuring a quick-closure system for easy on/off, sticky rubber outsole for maximum friction, and a snug fit that molds to your foot for precision on technical routes.',
+    description: 'Comfortable shoe suitable for daylong routes - ideal for beginners and recreational climbers.',
+    details: 'The Striker QC is an ideal choice for beginners and recreational climbers. With its comfortable Entratic last, mild asymmetry, and flat profile, it offers plenty of comfort for all-day climbing while still providing elements of sport precision. Features quick Velcro closure, CAT rubber 1.1 sole, reinforced toe rand, seamless heel, and comfortable elastic tongue. 100% vegan and handmade in the Czech Republic. Suitable for narrow, wide, and regular-width feet. Best for Roman toe shape, but also works for Egyptian and Greek types.',
     price: 46999,
     sale_price: null,
     currency: 'myr',
     is_active: true,
     image: 'https://www.ocun.com/assets/products/1_700x700/zsxl3btjoh.04835-STRIKER-QC-Green-Malachite-1-1-.jpg',
+    // Climbing shoe metadata
+    foot_type_narrow: true,
+    foot_type_regular: true,
+    foot_type_wide: true,
+    toe_type_egyptian: true,
+    toe_type_roman: true,
+    toe_type_greek: true,
+    terrain_rocks: true,
+    terrain_boulder: true,
+    terrain_multipitch: true,
+    terrain_indoor: true,
+    last_type: 'Entratic',
+    rubber_type: 'CAT 1.1',
     sizes: [
       { size: 'UK 5', stock: 1 },
       { size: 'UK 5.5', stock: 1 },
@@ -51,13 +77,26 @@ const fallbackProducts: Product[] = [
   {
     id: 'jett-qc',
     name: 'JETT QC',
-    description: 'Versatile all-day climbing shoe perfect for gym and outdoor routes.',
-    details: 'The JETT QC is designed for climbers who demand comfort without sacrificing performance. With a moderate downturn and breathable upper, these shoes excel on long climbing sessions. The quick-closure system ensures a secure fit, while the durable rubber rand provides protection and longevity.',
+    description: 'Sport climbing shoes that do not compromise comfort - built for performance with medium asymmetry.',
+    details: 'Jett QC is a comfortable climbing shoe for everyone who wants to push their limits. The All-round last with medium asymmetry and more volume in the instep and toe area, combined with a stiffer midsole, ensures both stability and support. Features CAT rubber 1.5 sole for highly grippy performance, dual opposite Velcro straps for quick and precise tightening, seamless heel, breathable tongue, and microfiber upper. 100% vegan and handcrafted in the Czech Republic. Ideal for climbers with Egyptian toe shape and regular-width feet. Also fits Greek and Roman toe shapes.',
     price: 52999,
     sale_price: null,
     currency: 'myr',
     is_active: true,
     image: 'https://www.ocun.com/assets/products/1_700x700/o4itpyk884.04041-Jett-QC-1.jpg',
+    // Climbing shoe metadata
+    foot_type_narrow: false,
+    foot_type_regular: true,
+    foot_type_wide: false,
+    toe_type_egyptian: true,
+    toe_type_roman: true,
+    toe_type_greek: true,
+    terrain_rocks: true,
+    terrain_boulder: true,
+    terrain_multipitch: true,
+    terrain_indoor: true,
+    last_type: 'All-round',
+    rubber_type: 'CAT 1.5',
     sizes: [
       { size: 'UK 5', stock: 1 },
       { size: 'UK 6', stock: 1 },
@@ -134,6 +173,19 @@ export async function getProducts(): Promise<Product[]> {
       image: product.image,
       currency: product.currency,
       is_active: (product as any).is_active ?? true,
+      // Climbing shoe metadata
+      foot_type_narrow: (product as any).foot_type_narrow,
+      foot_type_regular: (product as any).foot_type_regular,
+      foot_type_wide: (product as any).foot_type_wide,
+      toe_type_egyptian: (product as any).toe_type_egyptian,
+      toe_type_roman: (product as any).toe_type_roman,
+      toe_type_greek: (product as any).toe_type_greek,
+      terrain_rocks: (product as any).terrain_rocks,
+      terrain_boulder: (product as any).terrain_boulder,
+      terrain_multipitch: (product as any).terrain_multipitch,
+      terrain_indoor: (product as any).terrain_indoor,
+      last_type: (product as any).last_type,
+      rubber_type: (product as any).rubber_type,
       sizes: (sizesData as ProductSizeRow[] | null)
         ?.filter((size) => size.product_id === product.id)
         .map((size) => ({ size: size.size, stock: size.stock })),
@@ -183,6 +235,19 @@ export async function getProduct(id: string): Promise<Product | null> {
       image: typedProduct.image,
       currency: typedProduct.currency,
       is_active: (typedProduct as any).is_active ?? true,
+      // Climbing shoe metadata
+      foot_type_narrow: (typedProduct as any).foot_type_narrow,
+      foot_type_regular: (typedProduct as any).foot_type_regular,
+      foot_type_wide: (typedProduct as any).foot_type_wide,
+      toe_type_egyptian: (typedProduct as any).toe_type_egyptian,
+      toe_type_roman: (typedProduct as any).toe_type_roman,
+      toe_type_greek: (typedProduct as any).toe_type_greek,
+      terrain_rocks: (typedProduct as any).terrain_rocks,
+      terrain_boulder: (typedProduct as any).terrain_boulder,
+      terrain_multipitch: (typedProduct as any).terrain_multipitch,
+      terrain_indoor: (typedProduct as any).terrain_indoor,
+      last_type: (typedProduct as any).last_type,
+      rubber_type: (typedProduct as any).rubber_type,
       sizes: (sizesData as ProductSizeRow[] | null)?.map((size) => ({
         size: size.size,
         stock: size.stock
