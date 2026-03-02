@@ -7,9 +7,10 @@ import { ProductSize } from '@/lib/products';
 interface StockEditorProps {
     productId: string;
     initialSizes: ProductSize[];
+    onSizesChange?: (sizes: ProductSize[]) => void;
 }
 
-export default function StockEditor({ productId, initialSizes }: StockEditorProps) {
+export default function StockEditor({ productId, initialSizes, onSizesChange }: StockEditorProps) {
     const [sizes, setSizes] = useState<ProductSize[]>(initialSizes);
     const [loading, setLoading] = useState<string | null>(null);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -18,6 +19,11 @@ export default function StockEditor({ productId, initialSizes }: StockEditorProp
     const [newSize, setNewSize] = useState('');
     const [newStock, setNewStock] = useState('0');
 
+    const updateSizes = (next: ProductSize[]) => {
+        setSizes(next);
+        onSizesChange?.(next);
+    };
+
     const handleDelete = async (size: string) => {
         if (!confirm(`Delete size "${size}"? This action cannot be undone.`)) return;
         setLoading(`delete-${size}`);
@@ -25,7 +31,8 @@ export default function StockEditor({ productId, initialSizes }: StockEditorProp
 
         try {
             await deleteStock(productId, size);
-            setSizes((prev) => prev.filter((s) => s.size !== size));
+            const next = sizes.filter((s) => s.size !== size);
+            updateSizes(next);
             setMessage({ text: `Deleted ${size}`, type: 'success' });
         } catch (err) {
             console.error('Failed to delete size', err);
@@ -35,7 +42,6 @@ export default function StockEditor({ productId, initialSizes }: StockEditorProp
             setTimeout(() => setMessage(null), 3000);
         }
     };
-
 
     const handleStockChange = (size: string, newStock: string) => {
         const stockValue = parseInt(newStock);
@@ -55,12 +61,12 @@ export default function StockEditor({ productId, initialSizes }: StockEditorProp
 
         try {
             await updateStock(productId, size, sizeData.stock);
+            onSizesChange?.(sizes);
             setMessage({ text: `Updated ${size}`, type: 'success' });
         } catch {
             setMessage({ text: `Failed to update ${size}`, type: 'error' });
         } finally {
             setLoading(null);
-            // Clear success message after 3 seconds
             setTimeout(() => setMessage(null), 3000);
         }
     };
@@ -86,7 +92,8 @@ export default function StockEditor({ productId, initialSizes }: StockEditorProp
 
         try {
             await updateStock(productId, trimmed, stockVal);
-            setSizes((prev) => [...prev, { size: trimmed, stock: stockVal }]);
+            const next = [...sizes, { size: trimmed, stock: stockVal }];
+            updateSizes(next);
             setMessage({ text: `Added ${trimmed}`, type: 'success' });
             setNewSize('');
             setNewStock('0');

@@ -1,5 +1,6 @@
 import { verifyAuth, logout } from '@/app/admin/actions';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getProducts, getStoreSettings } from '@/lib/products';
 import StockEditor from '@/components/admin/StockEditor';
 import StoreStatusToggle from '@/components/admin/StoreStatusToggle';
@@ -21,9 +22,21 @@ export default async function AdminDashboard() {
             <nav className="bg-white shadow">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
-                        <div className="flex">
-                            <div className="flex-shrink-0 flex items-center">
-                                <h1 className="text-xl font-bold text-gray-900">Gunung Admin</h1>
+                        <div className="flex items-center gap-6">
+                            <h1 className="text-xl font-bold text-gray-900">Gunung Admin</h1>
+                            <div className="flex gap-1">
+                                <Link
+                                    href="/admin/dashboard"
+                                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-700"
+                                >
+                                    Inventory
+                                </Link>
+                                <Link
+                                    href="/admin/business"
+                                    className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                                >
+                                    Business
+                                </Link>
                             </div>
                         </div>
                         <div className="flex items-center">
