@@ -5,7 +5,9 @@ import {
   updateOrderStatus,
   addOrderAdjustment,
   deleteOrderAdjustment,
+  updateOrderItemCost,
   type Order,
+  type OrderItem,
   type OrderStatus,
   type InventoryProduct,
 } from '@/app/admin/business-actions';
@@ -35,6 +37,73 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-MY', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
+}
+
+// ─── Per-item cost editor ─────────────────────────────────────────────────────
+
+function ItemCostEditor({ item }: { item: OrderItem }) {
+  const [editing, setEditing] = useState(false);
+  const [costInput, setCostInput] = useState(
+    item.unit_cost != null ? (item.unit_cost / 100).toFixed(2) : ''
+  );
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+
+  const handleSave = async () => {
+    const cents = costInput === '' ? null : Math.round(parseFloat(costInput) * 100);
+    if (costInput !== '' && (isNaN(cents!) || cents! < 0)) { setSaveError(true); return; }
+    setSaving(true);
+    setSaveError(false);
+    try {
+      await updateOrderItemCost(item.id, cents);
+      setEditing(false);
+    } catch {
+      setSaveError(true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="text-xs text-gray-600">
+      <div>
+        {item.product_name}
+        {item.size ? <span className="text-gray-400"> ({item.size})</span> : null}
+        {item.quantity > 1 ? <span className="text-gray-400"> ×{item.quantity}</span> : null}
+        {!editing && (
+          <button
+            onClick={() => setEditing(true)}
+            className="ml-2 text-gray-300 hover:text-indigo-500 transition-colors"
+            title="Set cost for this item"
+          >
+            {item.unit_cost != null
+              ? `· cost ${formatMYR(item.unit_cost)}`
+              : '+ cost'}
+          </button>
+        )}
+      </div>
+      {editing && (
+        <div className="flex items-center gap-1 mt-1 ml-1">
+          <span className="text-gray-400">cost MYR</span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={costInput}
+            autoFocus
+            onChange={(e) => { setCostInput(e.target.value); setSaveError(false); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
+            className={`w-20 rounded border px-1 py-0.5 text-xs focus:outline-none ${saveError ? 'border-red-400' : 'border-gray-300 focus:border-indigo-400'}`}
+          />
+          <button onClick={handleSave} disabled={saving} className="text-indigo-600 hover:text-indigo-800 disabled:opacity-50 font-medium">
+            {saving ? '…' : '✓'}
+          </button>
+          <button onClick={() => { setEditing(false); setSaveError(false); }} className="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Adjustment panel ────────────────────────────────────────────────────────
@@ -338,11 +407,7 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
                     <td className="px-4 py-3">
                       <div className="space-y-0.5">
                         {order.items.map((item) => (
-                          <div key={item.id} className="text-xs text-gray-600">
-                            {item.product_name}
-                            {item.size ? <span className="text-gray-400"> ({item.size})</span> : null}
-                            {item.quantity > 1 ? <span className="text-gray-400"> ×{item.quantity}</span> : null}
-                          </div>
+                          <ItemCostEditor key={item.id} item={item} />
                         ))}
                       </div>
                     </td>

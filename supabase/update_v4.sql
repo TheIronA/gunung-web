@@ -38,3 +38,9 @@ CREATE POLICY "Service role can manage order adjustments"
 --    may be sourced at different prices. Falls back to products.cost_price
 --    in profit calculations when no size-level cost is set.
 ALTER TABLE product_sizes ADD COLUMN IF NOT EXISTS cost_price INTEGER;
+
+-- 5. Per-order-item cost override for historical profit accuracy
+--    Lets you record what a specific pair actually cost in that order,
+--    independent of the current product_sizes.cost_price value.
+--    Takes priority over size/product-level cost in profit calculations.
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_cost INTEGER;

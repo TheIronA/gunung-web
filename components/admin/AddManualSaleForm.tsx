@@ -7,13 +7,14 @@ import type { InventoryProduct } from '@/app/admin/business-actions';
 const STATUS_OPTIONS: OrderStatus[] = ['paid', 'pending', 'shipped', 'delivered', 'cancelled'];
 
 interface LineItem {
+  product_id: string; // real UUID if selected from list, '' for custom
   product_name: string;
   size: string;
   quantity: number;
   unit_price: string; // MYR string, converted on submit
 }
 
-const emptyItem = (): LineItem => ({ product_name: '', size: '', quantity: 1, unit_price: '' });
+const emptyItem = (): LineItem => ({ product_id: '', product_name: '', size: '', quantity: 1, unit_price: '' });
 
 interface LineItemRowProps {
   item: LineItem;
@@ -36,6 +37,7 @@ function LineItemRow({ item, idx, products, showRemove, onChange, onRemove }: Li
     : products;
 
   const selectProduct = (product: InventoryProduct) => {
+    onChange(idx, 'product_id', product.id);
     onChange(idx, 'product_name', product.name);
     onChange(idx, 'unit_price', (product.price / 100).toFixed(2));
     onChange(idx, 'size', '');
@@ -44,9 +46,10 @@ function LineItemRow({ item, idx, products, showRemove, onChange, onRemove }: Li
 
   const handleInputChange = (val: string) => {
     onChange(idx, 'product_name', val);
-    // If the new value no longer exactly matches the previous product, reset price
+    // If the new value no longer exactly matches the previous product, reset price + id
     const exactMatch = products.find((p) => p.name === val);
     if (!exactMatch) {
+      onChange(idx, 'product_id', '');
       onChange(idx, 'unit_price', '');
       onChange(idx, 'size', '');
     }
@@ -205,6 +208,7 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
       const price = parseFloat(it.unit_price);
       if (isNaN(price) || price < 0) { setError(`Invalid price for "${it.product_name}"`); return; }
       parsedItems.push({
+        product_id: it.product_id || undefined,
         product_name: it.product_name.trim(),
         size: it.size.trim() || null,
         quantity: it.quantity,

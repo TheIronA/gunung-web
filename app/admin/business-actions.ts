@@ -12,6 +12,7 @@ export interface OrderItem {
   size: string | null;
   quantity: number;
   unit_price: number;
+  unit_cost: number | null;
 }
 
 export interface OrderAdjustment {
@@ -41,6 +42,7 @@ export interface Order {
 }
 
 export interface ManualOrderItem {
+  product_id?: string; // real UUID when selected from product list; omit for custom items
   product_name: string;
   size: string | null;
   quantity: number;
@@ -90,7 +92,7 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
   // Fetch all paid orders with items (base tables)
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, status, created_at, order_items(product_id, size, quantity, unit_price)')
+    .select('id, total_amount, status, created_at, order_items(id, product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES);
 
   // Fetch adjustments separately — degrades gracefully if migration not yet run
@@ -130,6 +132,18 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
     sizeCostMap.set(`${sc.product_id}|${sc.size}`, sc.cost_price ?? null);
   }
 
+  // Fetch per-order-item cost overrides — highest priority in profit calc
+  const { data: itemCostData } = await (supabase
+    .from('order_items' as any) as any)
+    .select('id, unit_cost')
+    .then((res: any) => res)
+    .catch(() => ({ data: null }));
+
+  const unitCostById = new Map<string, number | null>();
+  for (const ic of (itemCostData || [])) {
+    unitCostById.set(ic.id, ic.unit_cost ?? null);
+  }
+
   let allTimeRevenue = 0;
   let allTimeProfit: number | null = 0;
   let thisMonthRevenue = 0;
@@ -143,21 +157,35 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
     allTimeRevenue += revenue;
 
     // Calculate profit for this order's items
+    // Priority: unit_cost (per-item override) → size cost → product cost
     let orderProfit: number | null = 0;
+    let processedCount = 0;
     for (const item of (order.order_items || [])) {
+      // Check per-item override FIRST — works even for manual/shipping items
+      const unitCost = unitCostById.get(item.id);
+      if (unitCost != null) {
+        processedCount++;
+        if (orderProfit !== null) {
+          orderProfit += (item.unit_price - unitCost) * item.quantity;
+        }
+        continue;
+      }
       const productCost = costByProductId.get(item.product_id);
-      if (productCost === undefined) continue; // non-product row (shipping, manual) — skip
-      // Size-level cost takes priority; fall back to product-level
+      if (productCost === undefined) continue; // non-product row with no override — skip
+      processedCount++;
       const sizeKey = `${item.product_id}|${item.size}`;
+      // Fall through: size cost → product cost → null (unknown)
       const cost = item.size && sizeCostMap.has(sizeKey)
-        ? (sizeCostMap.get(sizeKey) as number | null)
+        ? (sizeCostMap.get(sizeKey) ?? productCost)
         : productCost;
       if (cost === null) {
-        orderProfit = null; // cost not set
+        orderProfit = null;
       } else if (orderProfit !== null) {
         orderProfit += (item.unit_price - cost) * item.quantity;
       }
     }
+    // All items were non-product rows with no override → profit is unknown, not zero
+    if (processedCount === 0) orderProfit = null;
     // Apply adjustments to profit too
     if (orderProfit !== null) {
       orderProfit += adjustmentSum;
@@ -249,6 +277,18 @@ export async function getOrdersWithItems(): Promise<Order[]> {
     sourceById.set(o.id, o.source ?? 'online');
   }
 
+  // Fetch per-item cost overrides — gracefully degrade if column not yet added
+  const { data: itemCostRows } = await (supabase
+    .from('order_items' as any) as any)
+    .select('id, unit_cost')
+    .then((res: any) => res)
+    .catch(() => ({ data: null }));
+
+  const unitCostByItemId = new Map<string, number | null>();
+  for (const ic of (itemCostRows || [])) {
+    unitCostByItemId.set(ic.id, ic.unit_cost ?? null);
+  }
+
   // Fetch adjustments — gracefully degrade if migration not yet run
   const { data: adjData } = await (supabase
     .from('order_adjustments' as any) as any)
@@ -278,7 +318,10 @@ export async function getOrdersWithItems(): Promise<Order[]> {
       status: o.status,
       source: (sourceById.get(o.id) ?? 'online') as 'online' | 'in_person',
       created_at: o.created_at,
-      items: o.order_items || [],
+      items: (o.order_items || []).map((item: any) => ({
+        ...item,
+        unit_cost: unitCostByItemId.get(item.id) ?? null,
+      })),
       adjustments,
     };
   });
@@ -411,7 +454,7 @@ export async function createManualOrder(params: {
   // Insert order items
   const itemRows = params.items.map((item) => ({
     order_id: orderId,
-    product_id: 'manual',
+    product_id: item.product_id || 'manual',
     product_name: item.product_name,
     size: item.size || null,
     quantity: item.quantity,
@@ -460,6 +503,31 @@ export async function updateCostPrice(productId: string, costPriceCents: number 
   if (error) {
     console.error('Error updating cost price', error);
     throw new Error('Failed to update cost price');
+  }
+}
+
+export async function updateOrderItemCost(
+  itemId: string,
+  unitCostCents: number | null,
+) {
+  const isAuth = await verifyAuth();
+  if (!isAuth) throw new Error('Unauthorized');
+
+  if (unitCostCents !== null && unitCostCents < 0) {
+    throw new Error('Cost cannot be negative');
+  }
+
+  const supabase = createServerClient();
+  if (!supabase) throw new Error('Supabase not configured');
+
+  const { error } = await (supabase
+    .from('order_items' as any) as any)
+    .update({ unit_cost: unitCostCents } as any)
+    .eq('id', itemId);
+
+  if (error) {
+    console.error('Error updating item cost', error);
+    throw new Error('Failed to update cost');
   }
 }
 
@@ -560,7 +628,7 @@ export async function getMetricsForRange(
 
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, order_items(product_id, size, quantity, unit_price)')
+    .select('id, total_amount, order_items(id, product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES)
     .gte('created_at', `${start}T00:00:00Z`)
     .lte('created_at', `${end}T23:59:59Z`);
@@ -596,6 +664,17 @@ export async function getMetricsForRange(
     sizeCostMapR.set(`${sc.product_id}|${sc.size}`, sc.cost_price ?? null);
   }
 
+  const { data: itemCostDataR } = await (supabase
+    .from('order_items' as any) as any)
+    .select('id, unit_cost')
+    .then((res: any) => res)
+    .catch(() => ({ data: null }));
+
+  const unitCostByIdR = new Map<string, number | null>();
+  for (const ic of (itemCostDataR || [])) {
+    unitCostByIdR.set(ic.id, ic.unit_cost ?? null);
+  }
+
   let revenue = 0;
   let profit: number | null = 0;
 
@@ -604,16 +683,25 @@ export async function getMetricsForRange(
     revenue += order.total_amount + adjSum;
 
     let orderProfit: number | null = 0;
+    let processedCountR = 0;
     for (const item of (order.order_items || [])) {
+      const unitCost = unitCostByIdR.get(item.id);
+      if (unitCost != null) {
+        processedCountR++;
+        if (orderProfit !== null) orderProfit += (item.unit_price - unitCost) * item.quantity;
+        continue;
+      }
       const productCost = costById.get(item.product_id);
-      if (productCost === undefined) continue; // non-product row — skip
+      if (productCost === undefined) continue;
+      processedCountR++;
       const sizeKey = `${item.product_id}|${item.size}`;
       const cost = item.size && sizeCostMapR.has(sizeKey)
-        ? (sizeCostMapR.get(sizeKey) as number | null)
+        ? (sizeCostMapR.get(sizeKey) ?? productCost)
         : productCost;
       if (cost === null) orderProfit = null;
       else if (orderProfit !== null) orderProfit += (item.unit_price - cost) * item.quantity;
     }
+    if (processedCountR === 0) orderProfit = null;
     if (orderProfit !== null) orderProfit += adjSum;
 
     if (profit !== null) {
