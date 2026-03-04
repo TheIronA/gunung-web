@@ -57,7 +57,7 @@ function ProductCard({ product }: { product: InventoryProduct }) {
         <StockEditor
           productId={product.id}
           initialSizes={localSizes}
-          onSizesChange={setLocalSizes}
+          onSizesChange={(sizes) => setLocalSizes(sizes.map((s) => ({ ...s, cost_price: s.cost_price ?? null })))}
           showCostPrice
         />
       ) : (
