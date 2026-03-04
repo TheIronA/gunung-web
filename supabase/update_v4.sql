@@ -32,3 +32,9 @@ DROP POLICY IF EXISTS "Service role can manage order adjustments" ON order_adjus
 CREATE POLICY "Service role can manage order adjustments"
   ON order_adjustments FOR ALL
   USING (auth.role() = 'service_role');
+
+-- 4. Add cost_price per size variant for granular profit tracking
+--    Each individual size (pair) can have its own cost, since batches/sizes
+--    may be sourced at different prices. Falls back to products.cost_price
+--    in profit calculations when no size-level cost is set.
+ALTER TABLE product_sizes ADD COLUMN IF NOT EXISTS cost_price INTEGER;

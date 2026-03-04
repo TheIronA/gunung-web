@@ -65,7 +65,7 @@ export interface InventoryProduct {
   price: number;
   cost_price: number | null;
   is_active: boolean;
-  sizes: { size: string; stock: number }[];
+  sizes: { size: string; stock: number; cost_price: number | null }[];
 }
 
 export interface BestSeller {
@@ -90,7 +90,7 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
   // Fetch all paid orders with items (base tables)
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, status, created_at, order_items(product_id, quantity, unit_price)')
+    .select('id, total_amount, status, created_at, order_items(product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES);
 
   // Fetch adjustments separately — degrades gracefully if migration not yet run
@@ -118,6 +118,18 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
   const costByProductId = new Map<string, number | null>();
   (products || []).forEach((p: any) => costByProductId.set(p.id, p.cost_price));
 
+  // Fetch size-level cost prices — takes priority over product-level in profit calc
+  const { data: sizeCosts } = await (supabase
+    .from('product_sizes' as any) as any)
+    .select('product_id, size, cost_price')
+    .then((res: any) => res)
+    .catch(() => ({ data: null }));
+
+  const sizeCostMap = new Map<string, number | null>();
+  for (const sc of (sizeCosts || [])) {
+    sizeCostMap.set(`${sc.product_id}|${sc.size}`, sc.cost_price ?? null);
+  }
+
   let allTimeRevenue = 0;
   let allTimeProfit: number | null = 0;
   let thisMonthRevenue = 0;
@@ -133,9 +145,15 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
     // Calculate profit for this order's items
     let orderProfit: number | null = 0;
     for (const item of (order.order_items || [])) {
-      const cost = costByProductId.get(item.product_id);
-      if (cost == null) {
-        orderProfit = null;
+      const productCost = costByProductId.get(item.product_id);
+      if (productCost === undefined) continue; // non-product row (shipping, manual) — skip
+      // Size-level cost takes priority; fall back to product-level
+      const sizeKey = `${item.product_id}|${item.size}`;
+      const cost = item.size && sizeCostMap.has(sizeKey)
+        ? (sizeCostMap.get(sizeKey) as number | null)
+        : productCost;
+      if (cost === null) {
+        orderProfit = null; // cost not set
       } else if (orderProfit !== null) {
         orderProfit += (item.unit_price - cost) * item.quantity;
       }
@@ -445,6 +463,33 @@ export async function updateCostPrice(productId: string, costPriceCents: number 
   }
 }
 
+export async function updateSizeCostPrice(
+  productId: string,
+  size: string,
+  costPriceCents: number | null,
+) {
+  const isAuth = await verifyAuth();
+  if (!isAuth) throw new Error('Unauthorized');
+
+  if (costPriceCents !== null && costPriceCents < 0) {
+    throw new Error('Cost price cannot be negative');
+  }
+
+  const supabase = createServerClient();
+  if (!supabase) throw new Error('Supabase not configured');
+
+  const { error } = await (supabase
+    .from('product_sizes' as any) as any)
+    .update({ cost_price: costPriceCents } as any)
+    .eq('product_id', productId)
+    .eq('size', size);
+
+  if (error) {
+    console.error('Error updating size cost price', error);
+    throw new Error('Failed to update size cost price');
+  }
+}
+
 export async function getInventoryOverview(): Promise<InventoryProduct[]> {
   const isAuth = await verifyAuth();
   if (!isAuth) throw new Error('Unauthorized');
@@ -475,13 +520,31 @@ export async function getInventoryOverview(): Promise<InventoryProduct[]> {
     costById.set(p.id, p.cost_price ?? null);
   }
 
+  // Fetch size-level cost prices — gracefully degrades if column not yet added
+  const { data: sizeCostData } = await (supabase
+    .from('product_sizes' as any) as any)
+    .select('product_id, size, cost_price')
+    .then((res: any) => res)
+    .catch(() => ({ data: null }));
+
+  const sizeCostMap = new Map<string, number | null>();
+  for (const sc of (sizeCostData || [])) {
+    sizeCostMap.set(`${sc.product_id}|${sc.size}`, sc.cost_price ?? null);
+  }
+
   return (data || []).map((p: any) => ({
     id: p.id,
     name: p.name,
     price: p.price,
     cost_price: costById.get(p.id) ?? null,
     is_active: p.is_active,
-    sizes: (p.product_sizes || []).sort((a: any, b: any) => a.size.localeCompare(b.size)),
+    sizes: (p.product_sizes || [])
+      .sort((a: any, b: any) => a.size.localeCompare(b.size))
+      .map((s: any) => ({
+        size: s.size,
+        stock: s.stock,
+        cost_price: sizeCostMap.get(`${p.id}|${s.size}`) ?? null,
+      })),
   }));
 }
 
@@ -497,7 +560,7 @@ export async function getMetricsForRange(
 
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, order_items(product_id, quantity, unit_price)')
+    .select('id, total_amount, order_items(product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES)
     .gte('created_at', `${start}T00:00:00Z`)
     .lte('created_at', `${end}T23:59:59Z`);
@@ -522,6 +585,17 @@ export async function getMetricsForRange(
   const costById = new Map<string, number | null>();
   (products || []).forEach((p: any) => costById.set(p.id, p.cost_price ?? null));
 
+  const { data: sizeCostsR } = await (supabase
+    .from('product_sizes' as any) as any)
+    .select('product_id, size, cost_price')
+    .then((res: any) => res)
+    .catch(() => ({ data: null }));
+
+  const sizeCostMapR = new Map<string, number | null>();
+  for (const sc of (sizeCostsR || [])) {
+    sizeCostMapR.set(`${sc.product_id}|${sc.size}`, sc.cost_price ?? null);
+  }
+
   let revenue = 0;
   let profit: number | null = 0;
 
@@ -531,8 +605,13 @@ export async function getMetricsForRange(
 
     let orderProfit: number | null = 0;
     for (const item of (order.order_items || [])) {
-      const cost = costById.get(item.product_id);
-      if (cost == null) orderProfit = null;
+      const productCost = costById.get(item.product_id);
+      if (productCost === undefined) continue; // non-product row — skip
+      const sizeKey = `${item.product_id}|${item.size}`;
+      const cost = item.size && sizeCostMapR.has(sizeKey)
+        ? (sizeCostMapR.get(sizeKey) as number | null)
+        : productCost;
+      if (cost === null) orderProfit = null;
       else if (orderProfit !== null) orderProfit += (item.unit_price - cost) * item.quantity;
     }
     if (orderProfit !== null) orderProfit += adjSum;

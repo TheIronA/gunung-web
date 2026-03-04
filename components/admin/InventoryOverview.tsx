@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import type { InventoryProduct } from '@/app/admin/business-actions';
-import CostPriceEditor from './CostPriceEditor';
 import StockEditor from './StockEditor';
 
 interface InventoryOverviewProps {
@@ -41,11 +40,6 @@ function ProductCard({ product }: { product: InventoryProduct }) {
           <span className="ml-3 text-xs text-gray-500">Total: {totalStock}</span>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <CostPriceEditor
-            productId={product.id}
-            initialCostPrice={product.cost_price}
-            sellingPrice={product.price}
-          />
           <button
             onClick={() => setEditing((v) => !v)}
             className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
@@ -64,6 +58,7 @@ function ProductCard({ product }: { product: InventoryProduct }) {
           productId={product.id}
           initialSizes={localSizes}
           onSizesChange={setLocalSizes}
+          showCostPrice
         />
       ) : (
         <div>
