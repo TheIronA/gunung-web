@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { products, checkStock } from '@/lib/products';
+import { getProduct, checkStock } from '@/lib/products';
 import { getShippingRate } from '@/lib/shipping';
 import { getPriceDisplayData } from '@/lib/price-helpers';
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     // Check stock and map items
     const lineItems = await Promise.all(
       items.map(async (item: CheckoutItem) => {
-        const product = products.find((p) => p.id === item.id);
+        const product = await getProduct(item.id);
 
         if (!product) {
           throw new Error(`Product with ID ${item.id} not found`);
