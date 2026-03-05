@@ -9,7 +9,7 @@ export default async function AdminLoginPage({
 }) {
     const isAuth = await verifyAuth();
     if (isAuth) {
-        redirect('/admin/dashboard');
+        redirect('/admin/business');
     }
 
     // Await searchParams before accessing properties
