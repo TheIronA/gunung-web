@@ -6,6 +6,7 @@ import {
   addOrderAdjustment,
   deleteOrderAdjustment,
   updateOrderItemCost,
+  updateOrderTracking,
   type Order,
   type OrderItem,
   type OrderStatus,
@@ -258,6 +259,101 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, adjustments: in
   );
 }
 
+// ─── Tracking number panel ────────────────────────────────────────────────────
+
+interface TrackingPanelProps {
+  orderId: string;
+  initialTracking: string | null;
+  customerEmail: string;
+  customerName: string | null;
+}
+
+function TrackingPanel({ orderId, initialTracking, customerEmail, customerName }: TrackingPanelProps) {
+  const [open, setOpen] = useState(false);
+  const [tracking, setTracking] = useState(initialTracking || '');
+  const [saved, setSaved] = useState(initialTracking || '');
+  const [sendEmail, setSendEmail] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleSave = async () => {
+    if (!tracking.trim()) return;
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      await updateOrderTracking(orderId, tracking.trim(), sendEmail);
+      setSaved(tracking.trim());
+      setSuccess(true);
+      setTimeout(() => { setSuccess(false); setOpen(false); }, 1500);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to save');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-1.5">
+      <button
+        onClick={() => { setOpen((v) => !v); setError(null); setSuccess(false); }}
+        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
+          saved
+            ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+            : 'bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600'
+        }`}
+        title={saved ? `Tracking: ${saved}` : 'Add tracking number'}
+      >
+        {saved ? `📦 ${saved}` : '+ tracking'}
+      </button>
+
+      {open && (
+        <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2 text-xs w-60">
+          <p className="font-medium text-gray-600">Tracking number</p>
+          <input
+            type="text"
+            placeholder="e.g. MY1234567890"
+            value={tracking}
+            autoFocus
+            onChange={(e) => { setTracking(e.target.value); setError(null); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setOpen(false); }}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:border-purple-400 font-mono"
+          />
+          <label className="flex items-start gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+              className="mt-0.5 rounded"
+            />
+            <span className="text-gray-600 leading-tight">
+              Send tracking email to <span className="font-medium">{customerName || customerEmail}</span>
+            </span>
+          </label>
+          {error && <p className="text-red-500 text-xs">{error}</p>}
+          {success && <p className="text-green-600 text-xs">Saved!</p>}
+          <div className="flex gap-1.5">
+            <button
+              onClick={handleSave}
+              disabled={loading || !tracking.trim()}
+              className="flex-1 px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 text-xs font-medium"
+            >
+              {loading ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              className="px-2 py-1 rounded border border-gray-300 text-gray-500 hover:bg-gray-100 text-xs"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Status select ────────────────────────────────────────────────────────────
 
 function StatusSelect({ orderId, status: initialStatus }: { orderId: string; status: OrderStatus }) {
@@ -382,6 +478,7 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
@@ -393,6 +490,9 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
                 {paginated.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50 align-top">
                     <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="text-xs font-mono font-semibold text-gray-700">#{order.id.substring(0, 8).toUpperCase()}</div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{formatDate(order.created_at)}</div>
                       {order.source === 'in_person' && (
                         <span className="inline-block mt-0.5 text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-medium">
@@ -403,6 +503,9 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-gray-900">{order.customer_name || '—'}</div>
                       <div className="text-xs text-gray-400">{order.customer_email}</div>
+                      {order.shipping_address?.phone && (
+                        <div className="text-xs text-gray-400 mt-0.5">{order.shipping_address.phone}</div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="space-y-0.5">
@@ -419,8 +522,14 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
                         adjustments={order.adjustments}
                       />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3">
                       <StatusSelect orderId={order.id} status={order.status} />
+                      <TrackingPanel
+                        orderId={order.id}
+                        initialTracking={order.tracking_number}
+                        customerEmail={order.customer_email}
+                        customerName={order.customer_name}
+                      />
                     </td>
                   </tr>
                 ))}

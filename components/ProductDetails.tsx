@@ -152,7 +152,7 @@ export default function ProductDetails({ product }: { product: Product }) {
           </label>
           <div className="grid grid-cols-3 gap-2">
             {product.sizes!.map((sizeOption) => {
-              const isOutOfStock = sizeOption.stock === 0;
+              const isOutOfStock = (sizeOption.stock ?? 0) <= 0;
               const isSelected = selectedSize === sizeOption.size;
 
               return (

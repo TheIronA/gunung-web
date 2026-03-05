@@ -76,6 +76,8 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   // Extract shipping address from metadata (collected on our checkout page)
   const metadata = session.metadata || {};
   const shippingAddress = metadata.shipping_line1 ? {
+    name: metadata.shipping_name || undefined,
+    phone: metadata.shipping_phone || undefined,
     line1: metadata.shipping_line1,
     line2: metadata.shipping_line2 || undefined,
     city: metadata.shipping_city,

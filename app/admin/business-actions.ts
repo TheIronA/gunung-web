@@ -36,6 +36,7 @@ export interface Order {
   status: OrderStatus;
   /** 'online' = Stripe checkout | 'in_person' = manually recorded */
   source: 'online' | 'in_person';
+  tracking_number: string | null;
   created_at: string;
   items: OrderItem[];
   adjustments: OrderAdjustment[];
@@ -303,6 +304,18 @@ export async function getOrdersWithItems(): Promise<Order[]> {
     adjsByOrderId.set(adj.order_id, list);
   }
 
+  // Fetch tracking numbers — gracefully degrade if column not yet added
+  const { data: trackingData } = await (supabase
+    .from('orders' as any) as any)
+    .select('id, tracking_number')
+    .then((res: any) => res)
+    .catch(() => ({ data: null }));
+
+  const trackingById = new Map<string, string | null>();
+  for (const o of (trackingData || [])) {
+    trackingById.set(o.id, o.tracking_number ?? null);
+  }
+
   return (data || []).map((o: any) => {
     const adjustments: OrderAdjustment[] = adjsByOrderId.get(o.id) || [];
     const adjustmentSum = adjustments.reduce((s, a) => s + a.amount, 0);
@@ -317,6 +330,7 @@ export async function getOrdersWithItems(): Promise<Order[]> {
       currency: o.currency,
       status: o.status,
       source: (sourceById.get(o.id) ?? 'online') as 'online' | 'in_person',
+      tracking_number: trackingById.get(o.id) ?? null,
       created_at: o.created_at,
       items: (o.order_items || []).map((item: any) => ({
         ...item,
@@ -713,6 +727,48 @@ export async function getMetricsForRange(
   return { revenue, profit, orders: (orders || []).length };
 }
 
+export async function updateOrderTracking(
+  orderId: string,
+  trackingNumber: string,
+  sendEmail: boolean,
+) {
+  const isAuth = await verifyAuth();
+  if (!isAuth) throw new Error('Unauthorized');
+
+  if (!trackingNumber.trim()) throw new Error('Tracking number is required');
+
+  const supabase = createServerClient();
+  if (!supabase) throw new Error('Supabase not configured');
+
+  const { error } = await (supabase
+    .from('orders' as any) as any)
+    .update({ tracking_number: trackingNumber.trim() } as any)
+    .eq('id', orderId);
+
+  if (error) {
+    console.error('Error updating tracking number', error);
+    throw new Error('Failed to save tracking number. Run: ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT;');
+  }
+
+  if (sendEmail) {
+    const { data: order } = await (supabase
+      .from('orders' as any) as any)
+      .select('customer_email, customer_name')
+      .eq('id', orderId)
+      .single();
+
+    if (order) {
+      const { sendTrackingNotification } = await import('@/lib/notifications');
+      await sendTrackingNotification({
+        customerEmail: order.customer_email,
+        customerName: order.customer_name,
+        trackingNumber: trackingNumber.trim(),
+        orderId,
+      });
+    }
+  }
+}
+
 export async function getBestSellers(): Promise<BestSeller[]> {
   const isAuth = await verifyAuth();
   if (!isAuth) throw new Error('Unauthorized');
@@ -731,6 +787,7 @@ export async function getBestSellers(): Promise<BestSeller[]> {
 
   const aggregated = new Map<string, { total_quantity: number; total_revenue: number }>();
   for (const item of (data || [])) {
+    if (/shipping/i.test(item.product_name)) continue;
     const existing = aggregated.get(item.product_name) || { total_quantity: 0, total_revenue: 0 };
     existing.total_quantity += item.quantity;
     existing.total_revenue += item.unit_price * item.quantity;
