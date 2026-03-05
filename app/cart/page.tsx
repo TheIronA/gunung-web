@@ -372,8 +372,7 @@ export default function CartPage() {
                       />
                     </svg>
                     <p>
-                      Secure checkout powered by Stripe. Free shipping on orders
-                      over RM 500.
+                      Secure checkout powered by Stripe. Shipping calculated at checkout.
                     </p>
                   </div>
                 </div>

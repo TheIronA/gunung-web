@@ -194,7 +194,7 @@ export default function ProductDetails({ product }: { product: Product }) {
             selectedSize={selectedSize}
           />
           <p className="text-xs text-gray-500 mt-4 font-mono">
-            Secure payment via Stripe • Free shipping within Malaysia
+            Secure payment via Stripe • Shipping calculated at checkout
           </p>
         </div>
       )}
