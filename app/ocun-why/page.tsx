@@ -251,7 +251,7 @@ export default function OcunWhyPage() {
             {[
               "Czech craftsmanship dating back to 1993",
               "CAT rubber & multiple lasts for every foot",
-              "Official Ocún distributor for Malaysia",
+              "Authorized Ocún reseller — importing direct from Czech Republic",
             ].map((fact, i) => (
               <div
                 key={i}
@@ -594,6 +594,17 @@ export default function OcunWhyPage() {
               >
                 Striker QC
               </p>
+              <p
+                style={{
+                  fontFamily: "JetBrains Mono",
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: "#a3e5ac",
+                  margin: 0,
+                }}
+              >
+                RM 399
+              </p>
               <div style={{ width: 24, height: 2, background: "rgba(255,255,255,0.3)" }} />
               {["Velcro closure", "Flat last", "All-day comfort", "Great for gym"].map((pt) => (
                 <p
@@ -645,6 +656,17 @@ export default function OcunWhyPage() {
               >
                 Jett QC
               </p>
+              <p
+                style={{
+                  fontFamily: "JetBrains Mono",
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: "#a3e5ac",
+                  margin: 0,
+                }}
+              >
+                RM 469
+              </p>
               <div style={{ width: 24, height: 2, background: "rgba(255,255,255,0.3)" }} />
               {["Velcro closure", "Moderate downturn", "Precision edging", "Gym & sport routes"].map((pt) => (
                 <p
@@ -681,7 +703,7 @@ export default function OcunWhyPage() {
                 textTransform: "uppercase",
               }}
             >
-              Both available now at gunungclimbing.my
+              Both available now · Local retail RM 465+
             </span>
             <div style={{ width: 28, height: 3, background: "white" }} />
           </div>
@@ -781,8 +803,8 @@ export default function OcunWhyPage() {
               what we actually climb in — starting with Ocún.
             </p>
             {[
-              "Official Ocún distributor for Malaysia",
-              "Stocked locally, priced in RM",
+              "Direct importer bringing Ocún to Malaysia at competitive prices",
+              "Direct import pricing — no middleman markup",
               "More brands coming as we grow",
             ].map((pt, i) => (
               <div
@@ -941,7 +963,7 @@ export default function OcunWhyPage() {
                 marginBottom: 36,
               }}
             >
-              In stock now. More models and brands dropping as we grow.
+              Limited first batch — 12 Strikers, 5 Jetts left. More models and brands dropping as we grow.
             </p>
           </div>
 
@@ -979,7 +1001,7 @@ export default function OcunWhyPage() {
                   letterSpacing: "0.06em",
                 }}
               >
-                STRIKER QC · JETT QC · IN STOCK
+                STRIKER QC · JETT QC · LIMITED STOCK
               </p>
             </div>
             <div
