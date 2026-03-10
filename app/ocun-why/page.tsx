@@ -571,6 +571,12 @@ export default function OcunWhyPage() {
                 gap: 10,
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/zsxl3btjoh.04835-STRIKER-QC-Green-Malachite-1-1--removebg-preview.png"
+                alt="Striker QC"
+                style={{ width: "100%", height: 100, objectFit: "contain", marginBottom: 4 }}
+              />
               <span
                 style={{
                   fontFamily: "JetBrains Mono",
@@ -633,6 +639,12 @@ export default function OcunWhyPage() {
                 gap: 10,
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/o4itpyk884.04041-Jett-QC-1-removebg-preview.png"
+                alt="Jett QC"
+                style={{ width: "100%", height: 100, objectFit: "contain", marginBottom: 4 }}
+              />
               <span
                 style={{
                   fontFamily: "JetBrains Mono",
