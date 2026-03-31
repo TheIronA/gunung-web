@@ -22,7 +22,7 @@ export async function login(formData: FormData) {
       maxAge: MAX_AGE,
       path: '/',
     });
-    redirect('/admin/dashboard');
+    redirect('/admin/business');
   } else {
     redirect('/admin?error=Invalid password');
   }

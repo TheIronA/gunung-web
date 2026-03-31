@@ -159,7 +159,7 @@ export default function ProductDetails({ product }: { product: Product }) {
             Select Size
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {product.sizes!.map((sizeOption) => {
+            {[...product.sizes!].sort((a, b) => parseFloat(a.size.replace(/[^0-9.]/g, '')) - parseFloat(b.size.replace(/[^0-9.]/g, ''))).map((sizeOption) => {
               const stock = liveStock ? (liveStock[sizeOption.size] ?? 0) : (sizeOption.stock ?? 0);
               const isOutOfStock = stock <= 0 || confirmedOutOfStock.has(sizeOption.size);
               const isSelected = selectedSize === sizeOption.size;
