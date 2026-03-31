@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Product } from "@/lib/products";
+import { useState, useEffect } from "react";
+import { Product, checkAllStock } from "@/lib/products";
 import AddToCartButton from "./AddToCartButton";
 import PriceDisplay from "./PriceDisplay";
 
 export default function ProductDetails({ product }: { product: Product }) {
   const [selectedSize, setSelectedSize] = useState<string>("");
+  const [confirmedOutOfStock, setConfirmedOutOfStock] = useState<Set<string>>(new Set());
+  const [liveStock, setLiveStock] = useState<Record<string, number> | null>(null);
+
+  useEffect(() => {
+    if (product.sizes && product.sizes.length > 0) {
+      checkAllStock(product.id).then(setLiveStock);
+    }
+  }, [product.id, product.sizes]);
 
   // Check if size is required but not selected
   const isSizeRequired = product.sizes && product.sizes.length > 0;
@@ -152,7 +160,8 @@ export default function ProductDetails({ product }: { product: Product }) {
           </label>
           <div className="grid grid-cols-3 gap-2">
             {product.sizes!.map((sizeOption) => {
-              const isOutOfStock = (sizeOption.stock ?? 0) <= 0;
+              const stock = liveStock ? (liveStock[sizeOption.size] ?? 0) : (sizeOption.stock ?? 0);
+              const isOutOfStock = stock <= 0 || confirmedOutOfStock.has(sizeOption.size);
               const isSelected = selectedSize === sizeOption.size;
 
               return (
@@ -192,6 +201,10 @@ export default function ProductDetails({ product }: { product: Product }) {
             product={product}
             disabled={!canAddToCart}
             selectedSize={selectedSize}
+            onOutOfStock={(size) => {
+              setConfirmedOutOfStock((prev) => new Set(prev).add(size));
+              setSelectedSize("");
+            }}
           />
           <p className="text-xs text-gray-500 mt-4 font-mono">
             Secure payment via Stripe • Shipping calculated at checkout

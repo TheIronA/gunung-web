@@ -5,7 +5,13 @@
       "Bash(findstr:*)",
       "Bash(npm run build:*)",
       "Bash(cd:*)",
-      "WebFetch(domain:www.svgrepo.com)"
+      "WebFetch(domain:www.svgrepo.com)",
+      "WebFetch(domain:fonts.googleapis.com)",
+      "Bash(mkdir -p \"c:/Users/mralw/Desktop/random projects/Gunung/public/fonts\")",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuOKfMZg.ttf\" -o \"Inter-300.ttf\")",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf\" -o \"Inter-400.ttf\")",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf\" -o \"Inter-500.ttf\")",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf\" -o \"Inter-600.ttf\")"
     ]
   }
 }

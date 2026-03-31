@@ -10,10 +10,12 @@ export default function AddToCartButton({
   product,
   selectedSize,
   disabled = false,
+  onOutOfStock,
 }: {
   product: Product;
   selectedSize?: string;
   disabled?: boolean;
+  onOutOfStock?: (size: string) => void;
 }) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
@@ -32,6 +34,9 @@ export default function AddToCartButton({
       try {
         const stock = await checkStock(product.id, selectedSize);
         setAvailableStock(stock);
+        if (stock === 0) {
+          onOutOfStock?.(selectedSize);
+        }
       } catch {
         // Fallback to product data on error
         const fallbackStock = product.sizes?.find((s) => s.size === selectedSize)?.stock || 0;

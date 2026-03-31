@@ -289,6 +289,33 @@ export async function checkStock(productId: string, size: string): Promise<numbe
   }
 }
 
+// Check stock for all sizes of a product at once
+export async function checkAllStock(productId: string): Promise<Record<string, number>> {
+  const product = fallbackProducts.find((p) => p.id === productId);
+  const fallback: Record<string, number> = {};
+  product?.sizes?.forEach((s) => { fallback[s.size] = s.stock ?? 0; });
+
+  if (!isSupabaseConfigured || !supabase) return fallback;
+
+  try {
+    const { data, error } = await supabase
+      .from('product_sizes')
+      .select('size, stock')
+      .eq('product_id', productId);
+
+    if (error || !data) return fallback;
+
+    const result: Record<string, number> = {};
+    for (const row of data as { size: string; stock: number }[]) {
+      result[row.size] = row.stock;
+    }
+    return result;
+  } catch (error) {
+    console.error('Failed to check all stock:', error);
+    return fallback;
+  }
+}
+
 export async function getStoreSettings(): Promise<{ isStoreOpen: boolean }> {
   if (!isSupabaseConfigured || !supabase) {
     console.warn('Supabase not configured, defaulting store to open');
