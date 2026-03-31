@@ -112,14 +112,33 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       expand: ['data.price.product'],
     });
 
+    // Fetch actual Stripe fee from the balance transaction
+    let stripeFee = 0;
+    const paymentIntentId = session.payment_intent as string | null;
+    if (paymentIntentId && stripe) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+          expand: ['latest_charge.balance_transaction'],
+        });
+        const charge = paymentIntent.latest_charge as Stripe.Charge | null;
+        const balanceTx = charge?.balance_transaction as Stripe.BalanceTransaction | null;
+        if (balanceTx?.fee) {
+          stripeFee = balanceTx.fee; // in smallest currency unit (cents/sen)
+        }
+      } catch (e) {
+        console.error('Failed to fetch Stripe fee:', e);
+      }
+    }
+
     // Create order in Supabase - using type assertion for database operations
     const orderInsert = {
       stripe_session_id: session.id,
-      stripe_payment_intent_id: (session.payment_intent as string) || null,
+      stripe_payment_intent_id: paymentIntentId || null,
       customer_email: session.customer_details?.email || 'unknown',
       customer_name: customerName,
       shipping_address: shippingAddress,
       total_amount: session.amount_total || 0,
+      stripe_fee: stripeFee,
       currency: session.currency || 'myr',
       status: 'paid' as const,
     };

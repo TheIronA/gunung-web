@@ -32,6 +32,8 @@ export interface Order {
   total_amount: number;
   /** total_amount + SUM(adjustments) — the effective final total */
   effective_total: number;
+  /** Stripe processing fee in cents (0 for in-person orders) */
+  stripe_fee: number;
   currency: string;
   status: OrderStatus;
   /** 'online' = Stripe checkout | 'in_person' = manually recorded */
@@ -93,7 +95,7 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
   // Fetch all paid orders with items (base tables)
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, status, created_at, order_items(id, product_id, size, quantity, unit_price)')
+    .select('id, total_amount, stripe_fee, source, status, created_at, order_items(id, product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES);
 
   // Fetch adjustments separately — degrades gracefully if migration not yet run
@@ -191,6 +193,11 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
     if (orderProfit !== null) {
       orderProfit += adjustmentSum;
     }
+    // Deduct Stripe processing fee for online orders
+    const stripeFee = order.stripe_fee ?? 0;
+    if (orderProfit !== null && stripeFee > 0) {
+      orderProfit -= stripeFee;
+    }
 
     if (allTimeProfit !== null) {
       if (orderProfit === null) allTimeProfit = null;
@@ -253,6 +260,7 @@ export async function getOrdersWithItems(): Promise<Order[]> {
       customer_name,
       shipping_address,
       total_amount,
+      stripe_fee,
       currency,
       status,
       created_at,
@@ -327,6 +335,7 @@ export async function getOrdersWithItems(): Promise<Order[]> {
       shipping_address: o.shipping_address,
       total_amount: o.total_amount,
       effective_total: o.total_amount + adjustmentSum,
+      stripe_fee: o.stripe_fee ?? 0,
       currency: o.currency,
       status: o.status,
       source: (sourceById.get(o.id) ?? 'online') as 'online' | 'in_person',
@@ -642,7 +651,7 @@ export async function getMetricsForRange(
 
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, order_items(id, product_id, size, quantity, unit_price)')
+    .select('id, total_amount, stripe_fee, order_items(id, product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES)
     .gte('created_at', `${start}T00:00:00Z`)
     .lte('created_at', `${end}T23:59:59Z`);
@@ -717,6 +726,11 @@ export async function getMetricsForRange(
     }
     if (processedCountR === 0) orderProfit = null;
     if (orderProfit !== null) orderProfit += adjSum;
+    // Deduct Stripe processing fee
+    const stripeFeeR = order.stripe_fee ?? 0;
+    if (orderProfit !== null && stripeFeeR > 0) {
+      orderProfit -= stripeFeeR;
+    }
 
     if (profit !== null) {
       if (orderProfit === null) profit = null;
