@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   updateOrderStatus,
   addOrderAdjustment,
@@ -113,13 +114,14 @@ interface AdjustmentPanelProps {
   orderId: string;
   stripeTotal: number;
   effectiveTotal: number;
+  stripeFee: number;
   adjustments: Order['adjustments'];
 }
 
-function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, adjustments: initialAdjs }: AdjustmentPanelProps) {
+function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, adjustments: initialAdjs }: AdjustmentPanelProps) {
   const [open, setOpen] = useState(false);
   const [adjs, setAdjs] = useState(initialAdjs);
-  const [effective, setEffective] = useState(effectiveTotal);
+  const [effective, setEffective] = useState(effectiveTotal - stripeFee);
 
   const [type, setType] = useState<'discount' | 'surcharge'>('discount');
   const [value, setValue] = useState('');
@@ -150,7 +152,7 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, adjustments: in
       };
       const newAdjs = [...adjs, newAdj];
       setAdjs(newAdjs);
-      setEffective(stripeTotal + newAdjs.reduce((s, a) => s + a.amount, 0));
+      setEffective(stripeTotal + newAdjs.reduce((s, a) => s + a.amount, 0) - stripeFee);
       setValue('');
       setReason('');
     } catch {
@@ -165,13 +167,13 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, adjustments: in
       await deleteOrderAdjustment(adjId);
       const newAdjs = adjs.filter((a) => a.id !== adjId);
       setAdjs(newAdjs);
-      setEffective(stripeTotal + newAdjs.reduce((s, a) => s + a.amount, 0));
+      setEffective(stripeTotal + newAdjs.reduce((s, a) => s + a.amount, 0) - stripeFee);
     } catch {
       // silent — user can retry
     }
   };
 
-  const adjusted = effective !== stripeTotal;
+  const adjusted = effective !== stripeTotal || stripeFee > 0;
 
   return (
     <div>
@@ -192,6 +194,9 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, adjustments: in
       {open && (
         <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-3 text-xs">
           <p className="font-medium text-gray-600">Stripe charged: {formatMYR(stripeTotal)}</p>
+          {stripeFee > 0 && (
+            <p className="text-red-500">Stripe fee: −{formatMYR(stripeFee)}</p>
+          )}
 
           {adjs.length > 0 && (
             <ul className="space-y-1">
@@ -356,7 +361,7 @@ function TrackingPanel({ orderId, initialTracking, customerEmail, customerName }
 
 // ─── Status select ────────────────────────────────────────────────────────────
 
-function StatusSelect({ orderId, status: initialStatus }: { orderId: string; status: OrderStatus }) {
+function StatusSelect({ orderId, status: initialStatus, onChanged }: { orderId: string; status: OrderStatus; onChanged?: () => void }) {
   const [status, setStatus] = useState<OrderStatus>(initialStatus);
   const [loading, setLoading] = useState(false);
 
@@ -366,6 +371,7 @@ function StatusSelect({ orderId, status: initialStatus }: { orderId: string; sta
     setStatus(newStatus);
     try {
       await updateOrderStatus(orderId, newStatus);
+      onChanged?.();
     } catch {
       setStatus(prev);
     } finally {
@@ -390,10 +396,12 @@ function StatusSelect({ orderId, status: initialStatus }: { orderId: string; sta
 // ─── Main table ───────────────────────────────────────────────────────────────
 
 export default function OrdersTable({ initialOrders, products }: OrdersTableProps) {
+  const router = useRouter();
   const [orders, setOrders] = useState(initialOrders);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
   const [page, setPage] = useState(1);
+  const refreshStats = useCallback(() => router.refresh(), [router]);
 
   const filtered = orders.filter((o) => {
     const matchesSearch =
@@ -519,11 +527,12 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
                         orderId={order.id}
                         stripeTotal={order.total_amount}
                         effectiveTotal={order.effective_total}
+                        stripeFee={order.stripe_fee}
                         adjustments={order.adjustments}
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <StatusSelect orderId={order.id} status={order.status} />
+                      <StatusSelect orderId={order.id} status={order.status} onChanged={refreshStats} />
                       <TrackingPanel
                         orderId={order.id}
                         initialTracking={order.tracking_number}
