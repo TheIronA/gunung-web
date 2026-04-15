@@ -4,22 +4,65 @@ import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useCart } from "@/lib/cart-context";
-import { getPriceDisplayData } from "@/lib/price-helpers";
+import { getRegionalPriceData, formatPrice } from "@/lib/price-helpers";
+import { useRegion, FLAG_MAP, LABEL_MAP } from "@/lib/region-context";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { calculateShippingRates, isValidMalaysianState, type ShippingRate } from "@/lib/shipping";
+import { calculateShippingRates, isValidState, type ShippingRate } from "@/lib/shipping";
+
+const PLACEHOLDERS = {
+  MY: {
+    phone: "+60123456789",
+    line1: "123 Jalan Example",
+    city: "Kuala Lumpur",
+    state: "Selangor",
+    postalCode: "50000",
+  },
+  ID: {
+    phone: "+62812345678",
+    line1: "Jalan Sudirman No. 1",
+    city: "Jakarta",
+    state: "Jawa Barat",
+    postalCode: "10110",
+  },
+  SG: {
+    phone: "+6581234567",
+    line1: "123 Orchard Road",
+    city: "Singapore",
+    state: "Singapore",
+    postalCode: "238823",
+  },
+  PH: {
+    phone: "+639123456789",
+    line1: "123 Ayala Avenue",
+    city: "Manila",
+    state: "Metro Manila",
+    postalCode: "1226",
+  },
+};
+
+const COUNTRY_FOR_REGION: Record<string, string> = { MY: "MY", ID: "ID", SG: "SG", PH: "PH" };
 
 export default function CheckoutPage() {
-  const { items, subtotal, clearCart } = useCart();
+  const { items, clearCart } = useCart();
+  const { region, setRegion } = useRegion();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [discountCode, setDiscountCode] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
+  const [showMismatch, setShowMismatch] = useState(false);
 
   const isMobile = () => {
     return typeof window !== 'undefined' && window.innerWidth < 768;
   };
+
+  // Calculate subtotal in the current region's currency
+  const cartCurrency = region === "ID" ? "idr" : region === "SG" ? "sgd" : region === "PH" ? "php" : "myr";
+  const subtotal = items.reduce((sum, item) => {
+    const { priceData } = getRegionalPriceData(item.product, region);
+    return sum + priceData.currentPrice * item.quantity;
+  }, 0);
 
   // Shipping address state
   const [shippingAddress, setShippingAddress] = useState({
@@ -31,30 +74,46 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     postalCode: "",
+    country: region === "ID" ? "ID" : region === "SG" ? "SG" : region === "PH" ? "PH" : "MY",
   });
 
   const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
   const [selectedShippingRate, setSelectedShippingRate] = useState<string>("");
   const [shippingError, setShippingError] = useState("");
 
-  const formatPrice = (cents: number, currency: string) => {
-    const formatted = (cents / 100).toFixed(2);
-    return currency.toUpperCase() === "MYR" ? `RM ${formatted}` : `$${formatted}`;
-  };
+  // Detect mismatch between selected currency and shipping country
+  const expectedCountry = COUNTRY_FOR_REGION[region];
+  const regionMismatch = shippingAddress.country !== "" && shippingAddress.country !== expectedCountry;
+
+  // Debounce mismatch to avoid flicker during region/country sync
+  useEffect(() => {
+    if (regionMismatch) {
+      const timer = setTimeout(() => setShowMismatch(true), 150);
+      return () => clearTimeout(timer);
+    } else {
+      setShowMismatch(false);
+    }
+  }, [regionMismatch]);
 
   // Calculate shipping rates when state is entered
   useEffect(() => {
     if (shippingAddress.state) {
       setShippingError("");
 
-      if (!isValidMalaysianState(shippingAddress.state)) {
-        setShippingError("Please enter a valid Malaysian state");
+      if (!isValidState(shippingAddress.state, shippingAddress.country)) {
+        setShippingError(
+          shippingAddress.country === "ID"
+            ? "Please enter a valid Indonesian province"
+            : shippingAddress.country === "SG"
+            ? "Please enter a valid district"
+            : "Please enter a valid Malaysian state"
+        );
         setShippingRates([]);
         setSelectedShippingRate("");
         return;
       }
 
-      const rates = calculateShippingRates(shippingAddress.state, shippingAddress.postalCode);
+      const rates = calculateShippingRates(shippingAddress.state, shippingAddress.postalCode, shippingAddress.country);
       setShippingRates(rates);
 
       // Auto-select first option
@@ -65,7 +124,20 @@ export default function CheckoutPage() {
       setShippingRates([]);
       setSelectedShippingRate("");
     }
-  }, [shippingAddress.state, shippingAddress.postalCode, selectedShippingRate]);
+  }, [shippingAddress.state, shippingAddress.postalCode, shippingAddress.country, selectedShippingRate]);
+
+  // Sync country with region
+  useEffect(() => {
+    setShippingAddress((prev) => ({ ...prev, country: region === "ID" ? "ID" : region === "SG" ? "SG" : region === "PH" ? "PH" : "MY" }));
+  }, [region]);
+
+  const handleRegionSwitch = (newRegion: typeof region) => {
+    setRegion(newRegion);
+    setShippingAddress((prev) => ({ 
+      ...prev, 
+      country: COUNTRY_FOR_REGION[newRegion] || "MY" 
+    }));
+  };
 
   const selectedRate = shippingRates.find((rate) => rate.id === selectedShippingRate);
   const shippingCost = selectedRate ? selectedRate.rate : 0;
@@ -88,8 +160,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!isValidMalaysianState(shippingAddress.state)) {
-      alert("Please enter a valid Malaysian state");
+    if (!isValidState(shippingAddress.state, shippingAddress.country)) {
+      alert(shippingAddress.country === "ID"
+        ? "Please enter a valid Indonesian province"
+        : shippingAddress.country === "SG"
+        ? "Please enter a valid district"
+        : "Please enter a valid Malaysian state");
       return;
     }
 
@@ -112,6 +188,7 @@ export default function CheckoutPage() {
           })),
           shippingAddress,
           shippingRateId: selectedShippingRate,
+          region,
           discountCode: discountCode || undefined,
           notes: orderNotes || undefined,
         }),
@@ -154,6 +231,35 @@ export default function CheckoutPage() {
           <h1 className="text-4xl md:text-5xl font-heading font-black mb-8">
             Checkout
           </h1>
+
+          {/* Region mismatch warning */}
+          {showMismatch && (
+            <div className="mb-6 bg-amber-50 border border-amber-300 rounded p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <div className="flex-grow text-sm text-amber-800">
+                <strong>Currency mismatch:</strong> Your cart is priced in{" "}
+                <strong>{LABEL_MAP[region as keyof typeof LABEL_MAP]}</strong> but your shipping address is in a different country.
+                Switch your currency to match your delivery location, or update your address.
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {(["MY", "ID", "SG", "PH"] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => handleRegionSwitch(r)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded border transition-colors ${
+                      region === r
+                        ? "bg-amber-600 text-white border-amber-600"
+                        : "bg-white text-amber-700 border-amber-400 hover:bg-amber-50"
+                    }`}
+                  >
+                    {FLAG_MAP[r as keyof typeof FLAG_MAP]} {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Order Review */}
@@ -203,7 +309,7 @@ export default function CheckoutPage() {
                       value={shippingAddress.phone}
                       onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="+60123456789"
+                      placeholder={PLACEHOLDERS[shippingAddress.country as keyof typeof PLACEHOLDERS]?.phone || "+60123456789"}
                       autoComplete="tel"
                       required
                     />
@@ -218,7 +324,7 @@ export default function CheckoutPage() {
                       value={shippingAddress.line1}
                       onChange={(e) => setShippingAddress({ ...shippingAddress, line1: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="123 Jalan Example"
+                      placeholder={PLACEHOLDERS[shippingAddress.country as keyof typeof PLACEHOLDERS]?.line1 || "123 Jalan Example"}
                       autoComplete="address-line1"
                       required
                     />
@@ -247,7 +353,7 @@ export default function CheckoutPage() {
                       value={shippingAddress.city}
                       onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Kuala Lumpur"
+                      placeholder={PLACEHOLDERS[shippingAddress.country as keyof typeof PLACEHOLDERS]?.city || "Kuala Lumpur"}
                       autoComplete="address-level2"
                       required
                     />
@@ -255,14 +361,14 @@ export default function CheckoutPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      State *
+                      {shippingAddress.country === "ID" ? "Province" : "State"} *
                     </label>
                     <input
                       type="text"
                       value={shippingAddress.state}
                       onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Selangor"
+                      placeholder={PLACEHOLDERS[shippingAddress.country as keyof typeof PLACEHOLDERS]?.state || "Selangor"}
                       autoComplete="address-level1"
                       required
                     />
@@ -280,7 +386,7 @@ export default function CheckoutPage() {
                       value={shippingAddress.postalCode}
                       onChange={(e) => setShippingAddress({ ...shippingAddress, postalCode: e.target.value })}
                       className="w-full px-4 py-3 border border-border rounded shadow-brutal focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="50000"
+                      placeholder={PLACEHOLDERS[shippingAddress.country as keyof typeof PLACEHOLDERS]?.postalCode || "50000"}
                       autoComplete="postal-code"
                       required
                     />
@@ -321,7 +427,7 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         <p className="font-heading font-bold text-lg">
-                          {formatPrice(rate.rate, items[0].product.currency)}
+                          {formatPrice(rate.rate, cartCurrency)}
                         </p>
                       </label>
                     ))}
@@ -376,14 +482,10 @@ export default function CheckoutPage() {
                       <div className="text-right">
                         <p className="font-heading font-bold">
                           {(() => {
-                            const priceData = getPriceDisplayData(
-                              item.product.price,
-                              item.product.sale_price,
-                              item.product.sale_end_date
-                            );
+                            const { priceData, currency } = getRegionalPriceData(item.product, region);
                             return formatPrice(
                               priceData.currentPrice * item.quantity,
-                              item.product.currency
+                              currency
                             );
                           })()}
                         </p>
@@ -450,13 +552,13 @@ export default function CheckoutPage() {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>{formatPrice(subtotal, items[0].product.currency)}</span>
+                    <span>{formatPrice(subtotal, cartCurrency)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
                     <span>
                       {selectedRate ? (
-                        formatPrice(shippingCost, items[0].product.currency)
+                        formatPrice(shippingCost, cartCurrency)
                       ) : (
                         <span className="text-sm text-gray-500">
                           Enter address
@@ -466,7 +568,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="border-t border-border pt-3 flex justify-between font-heading font-bold text-xl">
                     <span>Total</span>
-                    <span>{formatPrice(total, items[0].product.currency)}</span>
+                    <span>{formatPrice(total, cartCurrency)}</span>
                   </div>
                 </div>
 
@@ -538,10 +640,52 @@ export default function CheckoutPage() {
                         <strong>Shipping Rates:</strong>
                       </p>
                       <p className="text-xs">
-                        • West Malaysia: RM 8 (Standard) / RM 15 (Express)<br />
-                        • East Malaysia: RM 15 (Standard) / RM 25 (Express)
+                        {region === "ID" ? (
+                          <>
+                            • All zones: Rp 172.000 (Standard)<br />
+                            • Express available for Java/Bali &amp; Outer Islands
+                          </>
+                        ) : region === "SG" ? (
+                          <>
+                            • Standard: SGD 15 (5–7 days)<br />
+                            • Express: SGD 25 (2–3 days)
+                          </>
+                        ) : region === "PH" ? (
+                          <>
+                            • Standard: ₱450 (3–5 days)<br />
+                            • Express: ₱1,150 (1–2 days)
+                          </>
+                        ) : (
+                          <>
+                            • West Malaysia: RM 8 (Standard) / RM 15 (Express)<br />
+                            • East Malaysia: RM 15 (Standard) / RM 25 (Express)
+                          </>
+                        )}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Disclaimer */}
+                  <div className="mt-4 pt-4 border-t border-border text-xs text-gray-500 space-y-2">
+                    <p>
+                      <strong>Currency:</strong> All prices are charged in{" "}
+                      {region === "ID" ? "Indonesian Rupiah (IDR)" : region === "SG" ? "Singapore Dollar (SGD)" : region === "PH" ? "Philippine Peso (PHP)" : "Malaysian Ringgit (MYR)"}.
+                      Ensure your selected currency matches your billing country to avoid card conversion fees.
+                    </p>
+                    {(region === "ID" || region === "SG" || region === "PH") && (
+                      <p>
+                        <strong>Customs &amp; Import:</strong> Orders shipped to{" "}
+                        {region === "ID" ? "Indonesia" : region === "SG" ? "Singapore" : "the Philippines"} are shipped from Malaysia.
+                        {region === "ID"
+                          ? " Import duties may apply for orders above IDR 3,000,000 (approx.). Gunung is not responsible for customs fees."
+                          : region === "SG"
+                          ? " Singapore has no GST threshold for imports below SGD 400. Orders above SGD 400 may be subject to GST."
+                          : " The Philippines has a de minimis threshold of ₱10,000. Orders above this amount may be subject to duties and taxes."}
+                      </p>
+                    )}
+                    <p>
+                      <strong>Final Sale:</strong> All sales are final. Prices are locked at the time of checkout.
+                    </p>
                   </div>
                 </div>
               </div>

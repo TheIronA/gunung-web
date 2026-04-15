@@ -83,6 +83,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     city: metadata.shipping_city,
     state: metadata.shipping_state,
     postal_code: metadata.shipping_postal_code,
+    country: metadata.shipping_country || null,
   } : null;
 
   const customerName = metadata.shipping_name || session.customer_details?.name || null;

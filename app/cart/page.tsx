@@ -3,14 +3,16 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useCart } from "@/lib/cart-context";
-import { getPriceDisplayData } from "@/lib/price-helpers";
+import { getRegionalPriceData, formatPrice } from "@/lib/price-helpers";
+import { useRegion } from "@/lib/region-context";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
+  const { items, removeItem, updateQuantity, clearCart } = useCart();
+  const { region } = useRegion();
   const router = useRouter();
   const [confirmRemove, setConfirmRemove] = useState<{ productId: string; size?: string } | null>(null);
 
@@ -18,10 +20,17 @@ export default function CartPage() {
     return typeof window !== 'undefined' && window.innerWidth < 768;
   };
 
-  const formatPrice = (cents: number, currency: string) => {
-    const formatted = (cents / 100).toFixed(2);
-    return currency.toUpperCase() === "MYR" ? `RM ${formatted}` : `$${formatted}`;
-  };
+  // Calculate subtotal in the current region's currency
+  const { subtotal, currency: cartCurrency } = items.reduce(
+    (acc, item) => {
+      const { priceData, currency } = getRegionalPriceData(item.product, region);
+      return {
+        subtotal: acc.subtotal + priceData.currentPrice * item.quantity,
+        currency,
+      };
+    },
+    { subtotal: 0, currency: region === "ID" ? "idr" : region === "SG" ? "sgd" : region === "PH" ? "php" : "myr" }
+  );
 
   // Check available stock for each item
   const getAvailableStock = (item: typeof items[0]) => {
@@ -278,34 +287,30 @@ export default function CartPage() {
                           {/* Price */}
                           <div className="text-right">
                             {(() => {
-                              const priceData = getPriceDisplayData(
-                                item.product.price,
-                                item.product.sale_price,
-                                item.product.sale_end_date
-                              );
+                              const { priceData, currency } = getRegionalPriceData(item.product, region);
                               return (
                                 <>
                                   <div className="text-sm text-gray-600 mb-1">
                                     {priceData.isOnSale ? (
                                       <>
                                         <span className="line-through mr-1">
-                                          {formatPrice(priceData.originalPrice!, item.product.currency)}
+                                          {formatPrice(priceData.originalPrice!, currency)}
                                         </span>
                                         <span className="text-accent font-bold">
-                                          {formatPrice(priceData.currentPrice, item.product.currency)}
+                                          {formatPrice(priceData.currentPrice, currency)}
                                         </span>
                                         {" each"}
                                       </>
                                     ) : (
                                       <>
-                                        {formatPrice(priceData.currentPrice, item.product.currency)} each
+                                        {formatPrice(priceData.currentPrice, currency)} each
                                       </>
                                     )}
                                   </div>
                                   <p className="font-heading font-bold text-lg">
                                     {formatPrice(
                                       priceData.currentPrice * item.quantity,
-                                      item.product.currency
+                                      currency
                                     )}
                                   </p>
                                 </>
@@ -330,7 +335,7 @@ export default function CartPage() {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>{formatPrice(subtotal, items[0].product.currency)}</span>
+                    <span>{formatPrice(subtotal, cartCurrency)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
@@ -338,7 +343,7 @@ export default function CartPage() {
                   </div>
                   <div className="border-t border-border pt-3 flex justify-between font-heading font-bold text-xl">
                     <span>Total</span>
-                    <span>{formatPrice(subtotal, items[0].product.currency)}</span>
+                    <span>{formatPrice(subtotal, cartCurrency)}</span>
                   </div>
                 </div>
 

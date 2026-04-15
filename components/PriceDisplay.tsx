@@ -1,23 +1,22 @@
-import { formatPrice, getPriceDisplayData } from '@/lib/price-helpers';
+"use client";
+
+import { formatPrice, getRegionalPriceData } from '@/lib/price-helpers';
+import { useRegion } from '@/lib/region-context';
+import type { Product } from '@/lib/products';
 
 interface PriceDisplayProps {
-  price: number;
-  salePrice?: number | null;
-  saleEndDate?: string | null;
-  currency: string;
+  product: Product;
   size?: 'small' | 'medium' | 'large';
   showSavings?: boolean;
 }
 
 export default function PriceDisplay({
-  price,
-  salePrice,
-  saleEndDate,
-  currency,
+  product,
   size = 'medium',
   showSavings = true,
 }: PriceDisplayProps) {
-  const priceData = getPriceDisplayData(price, salePrice, saleEndDate);
+  const { region } = useRegion();
+  const { priceData, currency } = getRegionalPriceData(product, region);
 
   const sizeClasses = {
     small: 'text-sm',

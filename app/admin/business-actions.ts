@@ -3,6 +3,16 @@
 import { createServerClient } from '@/lib/supabase';
 import { verifyAuth } from '@/app/admin/actions';
 
+// Stripe fee is always returned in the account settlement currency (MYR cents).
+// Convert to the order currency before deducting from profit.
+function convertStripeFee(feeMyrCents: number, orderCurrency: string): number {
+  const cur = orderCurrency.toLowerCase();
+  if (cur === 'idr') return Math.round((feeMyrCents / 100) * 4320); // MYR → IDR whole rupiah
+  if (cur === 'sgd') return Math.round(feeMyrCents / 3.14);         // MYR cents → SGD cents
+  if (cur === 'php') return Math.round(feeMyrCents * 12.6);         // MYR cents → PHP cents
+  return feeMyrCents; // MYR → MYR (no conversion)
+}
+
 export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface OrderItem {
@@ -52,13 +62,20 @@ export interface ManualOrderItem {
   unit_price: number; // cents
 }
 
-export interface BusinessMetrics {
+export interface CurrencyMetrics {
   allTimeRevenue: number;
-  allTimeProfit: number | null; // null if cost prices not fully set
+  allTimeProfit: number | null;
   thisMonthRevenue: number;
   thisMonthProfit: number | null;
   thisWeekRevenue: number;
   thisWeekProfit: number | null;
+}
+
+export interface BusinessMetrics {
+  myr: CurrencyMetrics;
+  idr: CurrencyMetrics;
+  sgd: CurrencyMetrics;
+  php: CurrencyMetrics;
   totalOrders: number;
   paidOrders: number;
   pendingOrders: number;
@@ -76,7 +93,10 @@ export interface InventoryProduct {
 export interface BestSeller {
   product_name: string;
   total_quantity: number;
-  total_revenue: number;
+  revenue_myr: number;
+  revenue_idr: number;
+  revenue_sgd: number;
+  revenue_php: number;
 }
 
 const PAID_STATUSES: OrderStatus[] = ['paid', 'shipped', 'delivered'];
@@ -95,7 +115,7 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
   // Fetch all paid orders with items (base tables)
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, stripe_fee, source, status, created_at, order_items(id, product_id, size, quantity, unit_price)')
+    .select('id, total_amount, stripe_fee, currency, source, status, created_at, order_items(id, product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES);
 
   // Fetch adjustments separately — degrades gracefully if migration not yet run
@@ -147,24 +167,39 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
     unitCostById.set(ic.id, ic.unit_cost ?? null);
   }
 
-  let allTimeRevenue = 0;
-  let allTimeProfit: number | null = 0;
-  let thisMonthRevenue = 0;
-  let thisMonthProfit: number | null = 0;
-  let thisWeekRevenue = 0;
-  let thisWeekProfit: number | null = 0;
+  const emptyMetrics = (): CurrencyMetrics => ({
+    allTimeRevenue: 0,
+    allTimeProfit: 0,
+    thisMonthRevenue: 0,
+    thisMonthProfit: 0,
+    thisWeekRevenue: 0,
+    thisWeekProfit: 0,
+  });
+  const myrM = emptyMetrics();
+  const idrM = emptyMetrics();
+  const sgdM = emptyMetrics();
+  const phpM = emptyMetrics();
 
   for (const order of (orders || [])) {
+    const rawCurrency = (order.currency || 'myr').toLowerCase();
+    const cur: 'myr' | 'idr' | 'sgd' | 'php' = 
+      rawCurrency === 'idr' ? 'idr' : 
+      rawCurrency === 'sgd' ? 'sgd' :
+      rawCurrency === 'php' ? 'php' : 'myr';
+    const m = 
+      cur === 'idr' ? idrM : 
+      cur === 'sgd' ? sgdM : 
+      cur === 'php' ? phpM : myrM;
+
     const adjustmentSum = adjSumByOrderId.get(order.id) ?? 0;
     const revenue = order.total_amount + adjustmentSum;
-    allTimeRevenue += revenue;
+    m.allTimeRevenue += revenue;
 
     // Calculate profit for this order's items
     // Priority: unit_cost (per-item override) → size cost → product cost
     let orderProfit: number | null = 0;
     let processedCount = 0;
     for (const item of (order.order_items || [])) {
-      // Check per-item override FIRST — works even for manual/shipping items
       const unitCost = unitCostById.get(item.id);
       if (unitCost != null) {
         processedCount++;
@@ -174,10 +209,9 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
         continue;
       }
       const productCost = costByProductId.get(item.product_id);
-      if (productCost === undefined) continue; // non-product row with no override — skip
+      if (productCost === undefined) continue;
       processedCount++;
       const sizeKey = `${item.product_id}|${item.size}`;
-      // Fall through: size cost → product cost → null (unknown)
       const cost = item.size && sizeCostMap.has(sizeKey)
         ? (sizeCostMap.get(sizeKey) ?? productCost)
         : productCost;
@@ -187,36 +221,29 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
         orderProfit += (item.unit_price - cost) * item.quantity;
       }
     }
-    // All items were non-product rows with no override → profit is unknown, not zero
     if (processedCount === 0) orderProfit = null;
-    // Apply adjustments to profit too
-    if (orderProfit !== null) {
-      orderProfit += adjustmentSum;
-    }
-    // Deduct Stripe processing fee for online orders
+    if (orderProfit !== null) orderProfit += adjustmentSum;
     const stripeFee = order.stripe_fee ?? 0;
-    if (orderProfit !== null && stripeFee > 0) {
-      orderProfit -= stripeFee;
-    }
+    if (orderProfit !== null && stripeFee > 0) orderProfit -= convertStripeFee(stripeFee, cur);
 
-    if (allTimeProfit !== null) {
-      if (orderProfit === null) allTimeProfit = null;
-      else allTimeProfit += orderProfit;
+    if (m.allTimeProfit !== null) {
+      if (orderProfit === null) m.allTimeProfit = null;
+      else m.allTimeProfit += orderProfit;
     }
 
     if (order.created_at >= startOfMonth) {
-      thisMonthRevenue += revenue;
-      if (thisMonthProfit !== null) {
-        if (orderProfit === null) thisMonthProfit = null;
-        else thisMonthProfit += orderProfit;
+      m.thisMonthRevenue += revenue;
+      if (m.thisMonthProfit !== null) {
+        if (orderProfit === null) m.thisMonthProfit = null;
+        else m.thisMonthProfit += orderProfit;
       }
     }
 
     if (order.created_at >= startOfWeek) {
-      thisWeekRevenue += revenue;
-      if (thisWeekProfit !== null) {
-        if (orderProfit === null) thisWeekProfit = null;
-        else thisWeekProfit += orderProfit;
+      m.thisWeekRevenue += revenue;
+      if (m.thisWeekProfit !== null) {
+        if (orderProfit === null) m.thisWeekProfit = null;
+        else m.thisWeekProfit += orderProfit;
       }
     }
   }
@@ -231,12 +258,10 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
   const pendingOrders = (allOrders || []).filter((o: any) => o.status === 'pending').length;
 
   return {
-    allTimeRevenue,
-    allTimeProfit,
-    thisMonthRevenue,
-    thisMonthProfit,
-    thisWeekRevenue,
-    thisWeekProfit,
+    myr: myrM,
+    idr: idrM,
+    sgd: sgdM,
+    php: phpM,
     totalOrders,
     paidOrders,
     pendingOrders,
@@ -642,7 +667,12 @@ export async function getInventoryOverview(): Promise<InventoryProduct[]> {
 export async function getMetricsForRange(
   start: string,
   end: string,
-): Promise<{ revenue: number; profit: number | null; orders: number }> {
+): Promise<{ 
+  myr: { revenue: number; profit: number | null; orders: number }; 
+  idr: { revenue: number; profit: number | null; orders: number };
+  sgd: { revenue: number; profit: number | null; orders: number };
+  php: { revenue: number; profit: number | null; orders: number };
+}> {
   const isAuth = await verifyAuth();
   if (!isAuth) throw new Error('Unauthorized');
 
@@ -651,7 +681,7 @@ export async function getMetricsForRange(
 
   const { data: orders, error } = await (supabase
     .from('orders' as any) as any)
-    .select('id, total_amount, stripe_fee, order_items(id, product_id, size, quantity, unit_price)')
+    .select('id, total_amount, stripe_fee, currency, order_items(id, product_id, size, quantity, unit_price)')
     .in('status', PAID_STATUSES)
     .gte('created_at', `${start}T00:00:00Z`)
     .lte('created_at', `${end}T23:59:59Z`);
@@ -698,12 +728,25 @@ export async function getMetricsForRange(
     unitCostByIdR.set(ic.id, ic.unit_cost ?? null);
   }
 
-  let revenue = 0;
-  let profit: number | null = 0;
+  const myrR = { revenue: 0, profit: 0 as number | null, orders: 0 };
+  const idrR = { revenue: 0, profit: 0 as number | null, orders: 0 };
+  const sgdR = { revenue: 0, profit: 0 as number | null, orders: 0 };
+  const phpR = { revenue: 0, profit: 0 as number | null, orders: 0 };
 
   for (const order of (orders || [])) {
+    const rawCurrency = (order.currency || 'myr').toLowerCase();
+    const cur = 
+      rawCurrency === 'idr' ? 'idr' : 
+      rawCurrency === 'sgd' ? 'sgd' :
+      rawCurrency === 'php' ? 'php' : 'myr';
+    const bucket = 
+      cur === 'idr' ? idrR : 
+      cur === 'sgd' ? sgdR : 
+      cur === 'php' ? phpR : myrR;
+    bucket.orders++;
+
     const adjSum = adjSumByOrderId.get(order.id) ?? 0;
-    revenue += order.total_amount + adjSum;
+    bucket.revenue += order.total_amount + adjSum;
 
     let orderProfit: number | null = 0;
     let processedCountR = 0;
@@ -726,19 +769,16 @@ export async function getMetricsForRange(
     }
     if (processedCountR === 0) orderProfit = null;
     if (orderProfit !== null) orderProfit += adjSum;
-    // Deduct Stripe processing fee
     const stripeFeeR = order.stripe_fee ?? 0;
-    if (orderProfit !== null && stripeFeeR > 0) {
-      orderProfit -= stripeFeeR;
-    }
+    if (orderProfit !== null && stripeFeeR > 0) orderProfit -= convertStripeFee(stripeFeeR, cur);
 
-    if (profit !== null) {
-      if (orderProfit === null) profit = null;
-      else profit += orderProfit;
+    if (bucket.profit !== null) {
+      if (orderProfit === null) bucket.profit = null;
+      else bucket.profit += orderProfit;
     }
   }
 
-  return { revenue, profit, orders: (orders || []).length };
+  return { myr: myrR, idr: idrR, sgd: sgdR, php: phpR };
 }
 
 export async function updateOrderTracking(
@@ -792,23 +832,44 @@ export async function getBestSellers(): Promise<BestSeller[]> {
 
   const { data, error } = await (supabase
     .from('order_items' as any) as any)
-    .select('product_name, quantity, unit_price');
+    .select('product_name, quantity, unit_price, orders!inner(currency)')
+    .in('orders.status', PAID_STATUSES);
 
   if (error) {
     console.error('Error fetching order items for best sellers', error);
     throw new Error('Failed to fetch best sellers');
   }
 
-  const aggregated = new Map<string, { total_quantity: number; total_revenue: number }>();
-  for (const item of (data || [])) {
-    if (/shipping/i.test(item.product_name)) continue;
-    const existing = aggregated.get(item.product_name) || { total_quantity: 0, total_revenue: 0 };
-    existing.total_quantity += item.quantity;
-    existing.total_revenue += item.unit_price * item.quantity;
-    aggregated.set(item.product_name, existing);
-  }
+  const items = data || [];
+  const sellersMap = new Map<string, BestSeller>();
 
-  return Array.from(aggregated.entries())
-    .map(([product_name, stats]) => ({ product_name, ...stats }))
-    .sort((a, b) => b.total_quantity - a.total_quantity);
+  items.forEach((item: any) => {
+    const name = item.product_name;
+    if (/shipping/i.test(name)) return;
+    const qty = item.quantity;
+    const price = item.unit_price;
+    const currency = (item.orders?.currency || 'myr').toLowerCase();
+    
+    if (!sellersMap.has(name)) {
+      sellersMap.set(name, {
+        product_name: name,
+        total_quantity: 0,
+        revenue_myr: 0,
+        revenue_idr: 0,
+        revenue_sgd: 0,
+        revenue_php: 0,
+      });
+    }
+
+    const seller = sellersMap.get(name)!;
+    seller.total_quantity += qty;
+    if (currency === 'idr') seller.revenue_idr += price * qty;
+    else if (currency === 'sgd') seller.revenue_sgd += price * qty;
+    else if (currency === 'php') seller.revenue_php += price * qty;
+    else seller.revenue_myr += price * qty;
+  });
+
+  return Array.from(sellersMap.values())
+    .sort((a, b) => b.total_quantity - a.total_quantity)
+    .slice(0, 10);
 }

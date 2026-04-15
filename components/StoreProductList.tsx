@@ -56,10 +56,7 @@ export default async function StoreProductList() {
               ) : (
                 <div className="flex items-center justify-between gap-3">
                   <PriceDisplay
-                    price={product.price}
-                    salePrice={product.sale_price}
-                    saleEndDate={product.sale_end_date}
-                    currency={product.currency}
+                    product={product}
                     size="medium"
                     showSavings={true}
                   />

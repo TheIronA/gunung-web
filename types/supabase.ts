@@ -35,6 +35,12 @@ export interface Database {
           terrain_indoor: boolean
           last_type: string | null
           rubber_type: string | null
+          price_idr: number | null
+          sale_price_idr: number | null
+          price_sgd: number | null
+          sale_price_sgd: number | null
+          price_php: number | null
+          sale_price_php: number | null
         }
         Insert: {
           id?: string
@@ -61,6 +67,12 @@ export interface Database {
           terrain_indoor?: boolean
           last_type?: string | null
           rubber_type?: string | null
+          price_idr?: number | null
+          sale_price_idr?: number | null
+          price_sgd?: number | null
+          sale_price_sgd?: number | null
+          price_php?: number | null
+          sale_price_php?: number | null
         }
         Update: {
           id?: string
@@ -86,6 +98,12 @@ export interface Database {
           terrain_indoor?: boolean
           last_type?: string | null
           rubber_type?: string | null
+          price_idr?: number | null
+          sale_price_idr?: number | null
+          price_sgd?: number | null
+          sale_price_sgd?: number | null
+          price_php?: number | null
+          sale_price_php?: number | null
         }
       }
       product_sizes: {

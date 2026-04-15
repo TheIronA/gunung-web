@@ -33,9 +33,19 @@ interface OrderNotificationData {
 }
 
 function formatCurrency(amount: number, currency: string): string {
+  const code = currency.toUpperCase();
+  // IDR is a zero-decimal currency (Stripe sends whole rupiah)
+  if (code === 'IDR') {
+    return amount.toLocaleString('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+  }
   return (amount / 100).toLocaleString('en-MY', {
     style: 'currency',
-    currency: currency.toUpperCase(),
+    currency: code,
   });
 }
 

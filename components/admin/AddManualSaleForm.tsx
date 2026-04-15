@@ -21,11 +21,13 @@ interface LineItemRowProps {
   idx: number;
   products: InventoryProduct[];
   showRemove: boolean;
+  currency: string;
   onChange: (idx: number, field: keyof LineItem, val: string | number) => void;
   onRemove: (idx: number) => void;
 }
 
-function LineItemRow({ item, idx, products, showRemove, onChange, onRemove }: LineItemRowProps) {
+function LineItemRow({ item, idx, products, showRemove, currency, onChange, onRemove }: LineItemRowProps) {
+  const isIDR = currency.toLowerCase() === 'idr';
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const matched = products.find((p) => p.name === item.product_name);
@@ -39,7 +41,13 @@ function LineItemRow({ item, idx, products, showRemove, onChange, onRemove }: Li
   const selectProduct = (product: InventoryProduct) => {
     onChange(idx, 'product_id', product.id);
     onChange(idx, 'product_name', product.name);
-    onChange(idx, 'unit_price', (product.price / 100).toFixed(2));
+    // Use regional price if possible
+    const price = currency.toLowerCase() === 'idr' ? (product as any).price_idr : 
+                  currency.toLowerCase() === 'sgd' ? (product as any).price_sgd : 
+                  currency.toLowerCase() === 'php' ? (product as any).price_php :
+                  product.price;
+    const finalPrice = price || product.price;
+    onChange(idx, 'unit_price', isIDR ? finalPrice.toString() : (finalPrice / 100).toFixed(2));
     onChange(idx, 'size', '');
     setDropdownOpen(false);
   };
@@ -91,7 +99,13 @@ function LineItemRow({ item, idx, products, showRemove, onChange, onRemove }: Li
               >
                 <span className="font-medium">{p.name}</span>
                 <span className="text-xs text-gray-400 ml-2">
-                  {(p.price / 100).toLocaleString('en-MY', { style: 'currency', currency: 'MYR' })}
+                  {currency.toLowerCase() === 'idr' 
+                    ? ((p as any).price_idr || 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })
+                    : currency.toLowerCase() === 'sgd'
+                    ? (((p as any).price_sgd || 0) / 100).toLocaleString('en-SG', { style: 'currency', currency: 'SGD' })
+                    : currency.toLowerCase() === 'php'
+                    ? (((p as any).price_php || 0) / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })
+                    : (p.price / 100).toLocaleString('en-MY', { style: 'currency', currency: 'MYR' })}
                 </span>
               </li>
             ))}
@@ -135,14 +149,14 @@ function LineItemRow({ item, idx, products, showRemove, onChange, onRemove }: Li
 
       {/* Unit price */}
       <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-400">MYR</span>
+        <span className="text-xs text-gray-400">{currency.toUpperCase()}</span>
         <input
           type="number"
           min="0"
-          step="0.01"
+          step={isIDR ? "1000" : "0.01"}
           value={item.unit_price}
           onChange={(e) => onChange(idx, 'unit_price', e.target.value)}
-          placeholder="0.00"
+          placeholder={isIDR ? "0" : "0.00"}
           className="w-20 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-indigo-400"
           title="Unit price"
         />
@@ -172,6 +186,7 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<OrderStatus>('paid');
+  const [currency, setCurrency] = useState('MYR');
   const [note, setNote] = useState('');
   const [items, setItems] = useState<LineItem[]>([emptyItem()]);
   const [loading, setLoading] = useState(false);
@@ -195,7 +210,8 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
 
   const computedTotal = items.reduce((sum, it) => {
     const price = parseFloat(it.unit_price);
-    return sum + (isNaN(price) ? 0 : Math.round(price * 100) * it.quantity);
+    const isIDR = currency === 'IDR';
+    return sum + (isNaN(price) ? 0 : (isIDR ? Math.round(price) : Math.round(price * 100)) * it.quantity);
   }, 0);
 
   const handleSubmit = async () => {
@@ -207,12 +223,13 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
       if (!it.product_name.trim()) { setError('Each item needs a product name'); return; }
       const price = parseFloat(it.unit_price);
       if (isNaN(price) || price < 0) { setError(`Invalid price for "${it.product_name}"`); return; }
+      const isIDR = currency === 'IDR';
       parsedItems.push({
         product_id: it.product_id || undefined,
         product_name: it.product_name.trim(),
         size: it.size.trim() || null,
         quantity: it.quantity,
-        unit_price: Math.round(price * 100),
+        unit_price: isIDR ? Math.round(price) : Math.round(price * 100),
       });
     }
 
@@ -224,7 +241,7 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
         customer_name: name,
         customer_email: email,
         total_amount: computedTotal,
-        currency: 'myr',
+        currency: currency.toLowerCase(),
         status,
         items: parsedItems,
         note: note || undefined,
@@ -240,9 +257,13 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
     }
   };
 
-  const totalFormatted = (computedTotal / 100).toLocaleString('en-MY', {
-    style: 'currency', currency: 'MYR',
-  });
+  const totalFormatted = currency === 'IDR' 
+    ? computedTotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })
+    : currency === 'SGD'
+    ? (computedTotal / 100).toLocaleString('en-SG', { style: 'currency', currency: 'SGD' })
+    : currency === 'PHP'
+    ? (computedTotal / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })
+    : (computedTotal / 100).toLocaleString('en-MY', { style: 'currency', currency: 'MYR' });
 
   return (
     <div className="mb-4">
@@ -290,6 +311,7 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
                   idx={idx}
                   products={liveProducts}
                   showRemove={items.length > 1}
+                  currency={currency}
                   onChange={updateItem}
                   onRemove={removeItem}
                 />
@@ -326,6 +348,21 @@ export default function AddManualSaleForm({ onSaved, products: initialProducts }
                 className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-400"
               />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 border-t border-gray-100 pt-4">
+            <span className="text-xs font-medium text-gray-500">Currency:</span>
+            {['MYR', 'IDR', 'SGD', 'PHP'].map((c) => (
+              <button
+                key={c}
+                onClick={() => setCurrency(c)}
+                className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
+                  currency === c ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
           </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}

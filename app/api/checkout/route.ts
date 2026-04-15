@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getProduct, checkStock } from '@/lib/products';
 import { getShippingRate } from '@/lib/shipping';
-import { getPriceDisplayData } from '@/lib/price-helpers';
+import { getRegionalPriceData } from '@/lib/price-helpers';
+import type { Region } from '@/lib/region-context';
 
 interface CheckoutItem {
   id: string;
@@ -19,16 +20,28 @@ interface ShippingAddress {
   city: string;
   state: string;
   postalCode: string;
+  country?: string;
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, shippingAddress, shippingRateId } = body as {
+    const { items, shippingAddress, shippingRateId, region: regionRaw } = body as {
       items: CheckoutItem[];
       shippingAddress: ShippingAddress;
       shippingRateId: string;
+      region?: string;
     };
+
+    const region: Region = 
+      regionRaw === 'ID' ? 'ID' : 
+      regionRaw === 'SG' ? 'SG' : 
+      regionRaw === 'PH' ? 'PH' : 'MY';
+    const country = shippingAddress.country || (
+      region === 'ID' ? 'ID' : 
+      region === 'SG' ? 'SG' : 
+      region === 'PH' ? 'PH' : 'MY'
+    );
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'No items provided' }, { status: 400 });
@@ -47,10 +60,15 @@ export async function POST(request: Request) {
     }
 
     // Validate shipping rate
-    const shippingRate = getShippingRate(shippingRateId, shippingAddress.state);
+    const shippingRate = getShippingRate(shippingRateId, shippingAddress.state, country);
     if (!shippingRate) {
       return NextResponse.json({ error: 'Invalid shipping rate' }, { status: 400 });
     }
+
+    const currency = 
+      region === 'ID' ? 'idr' : 
+      region === 'SG' ? 'sgd' : 
+      region === 'PH' ? 'php' : 'myr';
 
     // Check stock and map items
     const lineItems = await Promise.all(
@@ -71,25 +89,22 @@ export async function POST(request: Request) {
           }
         }
 
-        // Build product name with size if specified
         const productName = item.size
           ? `${product.name} - ${item.size}`
           : product.name;
 
-        // Use validated price (handles sale prices and expiration)
-        const priceData = getPriceDisplayData(
-          product.price,
-          product.sale_price,
-          product.sale_end_date
-        );
+        // Get regional price
+        const { priceData } = getRegionalPriceData(product, region);
 
-        // Stripe requires unit_amount to be an integer in cents
-        // Ensure we're passing a whole number to prevent Stripe API errors
+        // For IDR, amount is whole rupiah. For MYR, amount is in cents.
+        // Stripe expects smallest currency unit:
+        // - MYR: cents (already stored as cents)
+        // - IDR: whole rupiah (IDR has no subunit, 1 IDR = 1 smallest unit)
         const unitAmount = Math.round(priceData.currentPrice);
 
         return {
           price_data: {
-            currency: product.currency,
+            currency,
             product_data: {
               name: productName,
               description: product.description,
@@ -97,7 +112,6 @@ export async function POST(request: Request) {
                 product_id: product.id,
                 size: item.size || '',
               },
-              // images: [product.image], // Uncomment when you have real images hosted
             },
             unit_amount: unitAmount,
           },
@@ -109,7 +123,7 @@ export async function POST(request: Request) {
     // Add shipping as a line item
     lineItems.push({
       price_data: {
-        currency: 'myr',
+        currency,
         product_data: {
           name: shippingRate.name,
           description: `${shippingRate.description} - ${shippingRate.estimatedDays}`,
@@ -132,6 +146,7 @@ export async function POST(request: Request) {
       customer_email: shippingAddress.email,
       customer_creation: 'always',
       metadata: {
+        region,
         shipping_name: shippingAddress.name,
         shipping_phone: shippingAddress.phone,
         shipping_line1: shippingAddress.line1,
@@ -139,6 +154,7 @@ export async function POST(request: Request) {
         shipping_city: shippingAddress.city,
         shipping_state: shippingAddress.state,
         shipping_postal_code: shippingAddress.postalCode,
+        shipping_country: country,
       },
     });
 

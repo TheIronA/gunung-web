@@ -31,8 +31,23 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+function formatAmount(amount: number, currency: string) {
+  const cur = currency.toLowerCase();
+  if (cur === 'idr') {
+    return amount.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+  if (cur === 'sgd') {
+    return (amount / 100).toLocaleString('en-SG', { style: 'currency', currency: 'SGD' });
+  }
+  if (cur === 'php') {
+    return (amount / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+  }
+  return (amount / 100).toLocaleString('en-MY', { style: 'currency', currency: 'MYR' });
+}
+
+// Legacy alias used by sub-components that don't have a currency prop
 function formatMYR(cents: number) {
-  return (cents / 100).toLocaleString('en-MY', { style: 'currency', currency: 'MYR' });
+  return formatAmount(cents, 'myr');
 }
 
 function formatDate(iso: string) {
@@ -43,21 +58,22 @@ function formatDate(iso: string) {
 
 // ─── Per-item cost editor ─────────────────────────────────────────────────────
 
-function ItemCostEditor({ item }: { item: OrderItem }) {
+function ItemCostEditor({ item, currency }: { item: OrderItem; currency: string }) {
+  const isIDR = currency.toLowerCase() === 'idr';
   const [editing, setEditing] = useState(false);
   const [costInput, setCostInput] = useState(
-    item.unit_cost != null ? (item.unit_cost / 100).toFixed(2) : ''
+    item.unit_cost != null ? (isIDR ? item.unit_cost.toString() : (item.unit_cost / 100).toFixed(2)) : ''
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
   const handleSave = async () => {
-    const cents = costInput === '' ? null : Math.round(parseFloat(costInput) * 100);
-    if (costInput !== '' && (isNaN(cents!) || cents! < 0)) { setSaveError(true); return; }
+    const smallest = costInput === '' ? null : (isIDR ? Math.round(parseFloat(costInput)) : Math.round(parseFloat(costInput) * 100));
+    if (costInput !== '' && (isNaN(smallest!) || smallest! < 0)) { setSaveError(true); return; }
     setSaving(true);
     setSaveError(false);
     try {
-      await updateOrderItemCost(item.id, cents);
+      await updateOrderItemCost(item.id, smallest);
       setEditing(false);
     } catch {
       setSaveError(true);
@@ -79,19 +95,19 @@ function ItemCostEditor({ item }: { item: OrderItem }) {
             title="Set cost for this item"
           >
             {item.unit_cost != null
-              ? `· cost ${formatMYR(item.unit_cost)}`
+              ? `· cost ${formatAmount(item.unit_cost, currency)}`
               : '+ cost'}
           </button>
         )}
       </div>
       {editing && (
         <div className="flex items-center gap-1 mt-1 ml-1">
-          <span className="text-gray-400">cost MYR</span>
+          <span className="text-gray-400">cost {currency.toUpperCase()}</span>
           <input
             type="number"
             min="0"
-            step="0.01"
-            placeholder="0.00"
+            step={isIDR ? '1000' : '0.01'}
+            placeholder={isIDR ? '0' : '0.00'}
             value={costInput}
             autoFocus
             onChange={(e) => { setCostInput(e.target.value); setSaveError(false); }}
@@ -115,10 +131,13 @@ interface AdjustmentPanelProps {
   stripeTotal: number;
   effectiveTotal: number;
   stripeFee: number;
+  currency: string;
   adjustments: Order['adjustments'];
 }
 
-function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, adjustments: initialAdjs }: AdjustmentPanelProps) {
+function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, currency, adjustments: initialAdjs }: AdjustmentPanelProps) {
+  const fmt = (n: number) => formatAmount(n, currency);
+  const currencyLabel = currency.toUpperCase();
   const [open, setOpen] = useState(false);
   const [adjs, setAdjs] = useState(initialAdjs);
   const [effective, setEffective] = useState(effectiveTotal - stripeFee);
@@ -141,12 +160,15 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, adju
     }
     setLoading(true);
     setError(null);
-    const amountCents = Math.round(parsed * 100) * (type === 'discount' ? -1 : 1);
+    // MYR: user enters ringgit, store as cents. IDR: user enters rupiah, store as-is.
+    const amountSmallest = currency.toLowerCase() === 'idr'
+      ? Math.round(parsed) * (type === 'discount' ? -1 : 1)
+      : Math.round(parsed * 100) * (type === 'discount' ? -1 : 1);
     try {
-      await addOrderAdjustment(orderId, amountCents, reason);
+      await addOrderAdjustment(orderId, amountSmallest, reason);
       const newAdj = {
         id: crypto.randomUUID(),
-        amount: amountCents,
+        amount: amountSmallest,
         reason: reason.trim(),
         created_at: new Date().toISOString(),
       };
@@ -178,9 +200,9 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, adju
   return (
     <div>
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-900">{formatMYR(effective)}</span>
+        <span className="text-sm font-medium text-gray-900">{fmt(effective)}</span>
         {adjusted && (
-          <span className="text-xs text-gray-400 line-through">{formatMYR(stripeTotal)}</span>
+          <span className="text-xs text-gray-400 line-through">{fmt(stripeTotal)}</span>
         )}
         <button
           onClick={() => setOpen((v) => !v)}
@@ -193,9 +215,9 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, adju
 
       {open && (
         <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-3 text-xs">
-          <p className="font-medium text-gray-600">Stripe charged: {formatMYR(stripeTotal)}</p>
+          <p className="font-medium text-gray-600">Stripe charged: {fmt(stripeTotal)}</p>
           {stripeFee > 0 && (
-            <p className="text-red-500">Stripe fee: −{formatMYR(stripeFee)}</p>
+            <p className="text-red-500">Stripe fee: −{fmt(stripeFee)}</p>
           )}
 
           {adjs.length > 0 && (
@@ -203,7 +225,7 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, adju
               {adjs.map((adj) => (
                 <li key={adj.id} className="flex items-center justify-between gap-2">
                   <span className={adj.amount < 0 ? 'text-red-600' : 'text-green-600'}>
-                    {adj.amount < 0 ? '−' : '+'}{formatMYR(Math.abs(adj.amount))}
+                    {adj.amount < 0 ? '−' : '+'}{fmt(Math.abs(adj.amount))}
                   </span>
                   <span className="text-gray-500 flex-1">{adj.reason}</span>
                   <button
@@ -230,15 +252,15 @@ function AdjustmentPanel({ orderId, stripeTotal, effectiveTotal, stripeFee, adju
                 <option value="surcharge">Surcharge (+)</option>
               </select>
               <div className="flex items-center gap-1">
-                <span className="text-gray-400">MYR</span>
+                <span className="text-gray-400">{currencyLabel}</span>
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
-                  placeholder="0.00"
+                  step={currency.toLowerCase() === 'idr' ? '1000' : '0.01'}
+                  placeholder={currency.toLowerCase() === 'idr' ? '0' : '0.00'}
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  className="w-16 rounded border border-gray-300 px-1 py-1 text-xs focus:outline-none focus:border-indigo-400"
+                  className="w-20 rounded border border-gray-300 px-1 py-1 text-xs focus:outline-none focus:border-indigo-400"
                 />
               </div>
             </div>
@@ -419,16 +441,20 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const exportCSV = () => {
-    const headers = ['Date', 'Customer', 'Email', 'Items', 'Total (MYR)', 'Status', 'Type'];
-    const rows = filtered.map((o) => [
-      new Date(o.created_at).toISOString().slice(0, 10),
-      o.customer_name || '',
-      o.customer_email,
-      o.items.map((i) => `${i.product_name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('; '),
-      (o.effective_total / 100).toFixed(2),
-      o.status,
-      o.source === 'in_person' ? 'In-person' : 'Online',
-    ]);
+    const headers = ['Date', 'Customer', 'Email', 'Items', 'Currency', 'Total', 'Status', 'Type'];
+    const rows = filtered.map((o) => {
+      const isIDR = o.currency.toLowerCase() === 'idr';
+      return [
+        new Date(o.created_at).toISOString().slice(0, 10),
+        o.customer_name || '',
+        o.customer_email,
+        o.items.map((i) => `${i.product_name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('; '),
+        o.currency.toUpperCase(),
+        isIDR ? o.effective_total.toString() : (o.effective_total / 100).toFixed(2),
+        o.status,
+        o.source === 'in_person' ? 'In-person' : 'Online',
+      ];
+    });
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
       .join('\n');
@@ -518,7 +544,7 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
                     <td className="px-4 py-3">
                       <div className="space-y-0.5">
                         {order.items.map((item) => (
-                          <ItemCostEditor key={item.id} item={item} />
+                          <ItemCostEditor key={item.id} item={item} currency={order.currency} />
                         ))}
                       </div>
                     </td>
@@ -528,6 +554,7 @@ export default function OrdersTable({ initialOrders, products }: OrdersTableProp
                         stripeTotal={order.total_amount}
                         effectiveTotal={order.effective_total}
                         stripeFee={order.stripe_fee}
+                        currency={order.currency}
                         adjustments={order.adjustments}
                       />
                     </td>

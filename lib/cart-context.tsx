@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import type { Product } from "./products";
-import { getPriceDisplayData } from "./price-helpers";
+import { getRegionalPriceData } from "./price-helpers";
+import { useRegion } from "./region-context";
 
 export interface CartItem {
   product: Product;
@@ -26,6 +27,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
+  const { region } = useRegion();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -117,12 +119,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => {
-    // Use the same price calculation logic as the display to ensure consistency
-    const priceData = getPriceDisplayData(
-      item.product.price,
-      item.product.sale_price,
-      item.product.sale_end_date
-    );
+    const { priceData } = getRegionalPriceData(item.product, region);
     return sum + priceData.currentPrice * item.quantity;
   }, 0);
 

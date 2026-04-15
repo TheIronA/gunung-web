@@ -11,9 +11,15 @@ export interface Product {
   name: string;
   description: string;
   details: string;
-  price: number; // in cents
-  sale_price?: number | null; // in cents, null means no active sale
+  price: number; // in cents (MYR)
+  sale_price?: number | null; // in cents (MYR), null means no active sale
   sale_end_date?: string | null;
+  price_idr?: number | null; // in IDR (no cents — IDR is whole numbers)
+  sale_price_idr?: number | null;
+  price_sgd?: number | null; // in SGD cents
+  sale_price_sgd?: number | null;
+  price_php?: number | null; // in PHP cents
+  sale_price_php?: number | null;
   image: string;
   currency: string;
   is_active: boolean;
@@ -45,7 +51,13 @@ const fallbackProducts: Product[] = [
     description: 'Comfortable shoe suitable for daylong routes - ideal for beginners and recreational climbers.',
     details: 'The Striker QC is an ideal choice for beginners and recreational climbers. With its comfortable Entratic last, mild asymmetry, and flat profile, it offers plenty of comfort for all-day climbing while still providing elements of sport precision. Features quick Velcro closure, CAT rubber 1.1 sole, reinforced toe rand, seamless heel, and comfortable elastic tongue. 100% vegan and handmade in the Czech Republic. Suitable for narrow, wide, and regular-width feet. Best for Roman toe shape, but also works for Egyptian and Greek types.',
     price: 46999,
-    sale_price: null,
+    sale_price: 39900,
+    price_idr: 2350000,
+    sale_price_idr: 2000000,
+    price_sgd: 14900,
+    sale_price_sgd: 13000,
+    price_php: 730000,
+    sale_price_php: 620000,
     currency: 'myr',
     is_active: true,
     image: 'https://www.ocun.com/assets/products/1_700x700/zsxl3btjoh.04835-STRIKER-QC-Green-Malachite-1-1-.jpg',
@@ -80,7 +92,13 @@ const fallbackProducts: Product[] = [
     description: 'Sport climbing shoes that do not compromise comfort - built for performance with medium asymmetry.',
     details: 'Jett QC is a comfortable climbing shoe for everyone who wants to push their limits. The All-round last with medium asymmetry and more volume in the instep and toe area, combined with a stiffer midsole, ensures both stability and support. Features CAT rubber 1.5 sole for highly grippy performance, dual opposite Velcro straps for quick and precise tightening, seamless heel, breathable tongue, and microfiber upper. 100% vegan and handcrafted in the Czech Republic. Ideal for climbers with Egyptian toe shape and regular-width feet. Also fits Greek and Roman toe shapes.',
     price: 52999,
-    sale_price: null,
+    sale_price: 46900,
+    price_idr: 2585000,
+    sale_price_idr: 2200000,
+    price_sgd: 16900,
+    sale_price_sgd: 15300,
+    price_php: 860000,
+    sale_price_php: 730000,
     currency: 'myr',
     is_active: true,
     image: 'https://www.ocun.com/assets/products/1_700x700/o4itpyk884.04041-Jett-QC-1.jpg',
@@ -115,6 +133,10 @@ const fallbackProducts: Product[] = [
     details: 'The Gunung Ascent Tee is crafted from a breathable, heavyweight cotton blend that stands up to the abrasion of the rock while keeping you cool. Featuring a relaxed fit for unrestricted movement and our signature mountain motif on the back.',
     price: 3500,
     sale_price: null,
+    price_idr: 125000,
+    sale_price_idr: null,
+    price_sgd: 1115,
+    sale_price_sgd: null,
     currency: 'myr',
     is_active: true,
     image: '/gunung-tee-placeholder.png',
@@ -126,6 +148,10 @@ const fallbackProducts: Product[] = [
     details: 'Keep your hands dry and your focus sharp. Our chalk bag features a stiffened rim for easy access, a soft fleece lining to hold chalk effectively, and a tight closure system to prevent spills in your pack. Includes a brush loop and waist belt.',
     price: 8900,
     sale_price: null,
+    price_idr: 315000,
+    sale_price_idr: null,
+    price_sgd: 2834,
+    sale_price_sgd: null,
     currency: 'myr',
     is_active: true,
     image: '/gunung-chalkbag-placeholder.png',
@@ -170,22 +196,28 @@ export async function getProducts(): Promise<Product[]> {
       price: product.price,
       sale_price: product.sale_price,
       sale_end_date: product.sale_end_date,
+      price_idr: product.price_idr ?? null,
+      sale_price_idr: product.sale_price_idr ?? null,
+      price_sgd: product.price_sgd ?? null,
+      sale_price_sgd: product.sale_price_sgd ?? null,
+      price_php: product.price_php ?? null,
+      sale_price_php: product.sale_price_php ?? null,
       image: product.image,
       currency: product.currency,
-      is_active: (product as any).is_active ?? true,
+      is_active: product.is_active ?? true,
       // Climbing shoe metadata
-      foot_type_narrow: (product as any).foot_type_narrow,
-      foot_type_regular: (product as any).foot_type_regular,
-      foot_type_wide: (product as any).foot_type_wide,
-      toe_type_egyptian: (product as any).toe_type_egyptian,
-      toe_type_roman: (product as any).toe_type_roman,
-      toe_type_greek: (product as any).toe_type_greek,
-      terrain_rocks: (product as any).terrain_rocks,
-      terrain_boulder: (product as any).terrain_boulder,
-      terrain_multipitch: (product as any).terrain_multipitch,
-      terrain_indoor: (product as any).terrain_indoor,
-      last_type: (product as any).last_type,
-      rubber_type: (product as any).rubber_type,
+      foot_type_narrow: product.foot_type_narrow,
+      foot_type_regular: product.foot_type_regular,
+      foot_type_wide: product.foot_type_wide,
+      toe_type_egyptian: product.toe_type_egyptian,
+      toe_type_roman: product.toe_type_roman,
+      toe_type_greek: product.toe_type_greek,
+      terrain_rocks: product.terrain_rocks,
+      terrain_boulder: product.terrain_boulder,
+      terrain_multipitch: product.terrain_multipitch,
+      terrain_indoor: product.terrain_indoor,
+      last_type: product.last_type,
+      rubber_type: product.rubber_type,
       sizes: (sizesData as ProductSizeRow[] | null)
         ?.filter((size) => size.product_id === product.id)
         .map((size) => ({ size: size.size, stock: size.stock })),
@@ -232,22 +264,28 @@ export async function getProduct(id: string): Promise<Product | null> {
       price: typedProduct.price,
       sale_price: typedProduct.sale_price,
       sale_end_date: typedProduct.sale_end_date,
+      price_idr: typedProduct.price_idr ?? null,
+      sale_price_idr: typedProduct.sale_price_idr ?? null,
+      price_sgd: typedProduct.price_sgd ?? null,
+      sale_price_sgd: typedProduct.sale_price_sgd ?? null,
+      price_php: typedProduct.price_php ?? null,
+      sale_price_php: typedProduct.sale_price_php ?? null,
       image: typedProduct.image,
       currency: typedProduct.currency,
-      is_active: (typedProduct as any).is_active ?? true,
+      is_active: typedProduct.is_active ?? true,
       // Climbing shoe metadata
-      foot_type_narrow: (typedProduct as any).foot_type_narrow,
-      foot_type_regular: (typedProduct as any).foot_type_regular,
-      foot_type_wide: (typedProduct as any).foot_type_wide,
-      toe_type_egyptian: (typedProduct as any).toe_type_egyptian,
-      toe_type_roman: (typedProduct as any).toe_type_roman,
-      toe_type_greek: (typedProduct as any).toe_type_greek,
-      terrain_rocks: (typedProduct as any).terrain_rocks,
-      terrain_boulder: (typedProduct as any).terrain_boulder,
-      terrain_multipitch: (typedProduct as any).terrain_multipitch,
-      terrain_indoor: (typedProduct as any).terrain_indoor,
-      last_type: (typedProduct as any).last_type,
-      rubber_type: (typedProduct as any).rubber_type,
+      foot_type_narrow: typedProduct.foot_type_narrow,
+      foot_type_regular: typedProduct.foot_type_regular,
+      foot_type_wide: typedProduct.foot_type_wide,
+      toe_type_egyptian: typedProduct.toe_type_egyptian,
+      toe_type_roman: typedProduct.toe_type_roman,
+      toe_type_greek: typedProduct.toe_type_greek,
+      terrain_rocks: typedProduct.terrain_rocks,
+      terrain_boulder: typedProduct.terrain_boulder,
+      terrain_multipitch: typedProduct.terrain_multipitch,
+      terrain_indoor: typedProduct.terrain_indoor,
+      last_type: typedProduct.last_type,
+      rubber_type: typedProduct.rubber_type,
       sizes: (sizesData as ProductSizeRow[] | null)?.map((size) => ({
         size: size.size,
         stock: size.stock

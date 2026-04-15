@@ -67,7 +67,8 @@ export default function StockEditor({
   };
 
   const handleStockChange = (size: string, value: string) => {
-    const v = parseInt(value);
+    // Allow empty string (user backspacing), treat as 0
+    const v = value === '' ? 0 : parseInt(value);
     if (isNaN(v) || v < 0) return;
     setSizes((prev) => prev.map((s) => (s.size === size ? { ...s, stock: v } : s)));
   };

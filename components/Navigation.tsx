@@ -2,12 +2,27 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/lib/cart-context";
+import { useRegion, REGIONS, FLAG_MAP, LABEL_MAP, type Region } from "@/lib/region-context";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
+  const currencyRef = useRef<HTMLDivElement>(null);
   const { totalItems } = useCart();
+  const { region, setRegion } = useRegion();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (currencyRef.current && !currencyRef.current.contains(e.target as Node)) {
+        setIsCurrencyOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border">
@@ -46,6 +61,33 @@ export default function Navigation() {
             </svg>
             Contact
           </Link>
+          <div className="relative" ref={currencyRef}>
+            <button
+              onClick={() => setIsCurrencyOpen(!isCurrencyOpen)}
+              className="text-xs font-mono font-bold px-2 py-1 rounded border border-border hover:border-primary transition-colors bg-white flex items-center gap-1"
+              title="Switch region"
+            >
+              {FLAG_MAP[region]} {LABEL_MAP[region]}
+              <svg className={`w-3 h-3 transition-transform ${isCurrencyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {isCurrencyOpen && (
+              <div className="absolute right-0 mt-1 bg-white border border-border rounded shadow-lg z-50 min-w-[100px]">
+                {REGIONS.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => { setRegion(r); setIsCurrencyOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs font-mono font-bold hover:bg-gray-50 flex items-center gap-2 ${
+                      r === region ? 'bg-gray-100 text-primary' : 'text-gray-600'
+                    }`}
+                  >
+                    {FLAG_MAP[r]} {LABEL_MAP[r]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Link href="/cart" className="relative text-gray-500 hover:text-primary transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -114,6 +156,20 @@ export default function Navigation() {
             </svg>
             Contact
           </Link>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-gray-400 font-medium">Currency</span>
+            {REGIONS.map((r) => (
+              <button
+                key={r}
+                onClick={() => { setRegion(r); setIsMenuOpen(false); }}
+                className={`text-sm font-mono font-bold py-1 flex items-center gap-2 transition-colors ${
+                  r === region ? 'text-primary' : 'text-gray-500 hover:text-primary'
+                }`}
+              >
+                {FLAG_MAP[r]} {LABEL_MAP[r]} {r === region && '✓'}
+              </button>
+            ))}
+          </div>
           <Link
             href="/cart"
             className="text-gray-500 hover:text-primary transition-colors text-sm font-medium py-2 flex items-center gap-2 relative"

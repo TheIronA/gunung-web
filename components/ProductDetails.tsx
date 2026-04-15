@@ -33,10 +33,7 @@ export default function ProductDetails({ product }: { product: Product }) {
       ) : (
         <div className="mb-6">
           <PriceDisplay
-            price={product.price}
-            salePrice={product.sale_price}
-            saleEndDate={product.sale_end_date}
-            currency={product.currency}
+            product={product}
             size="large"
             showSavings={true}
           />
